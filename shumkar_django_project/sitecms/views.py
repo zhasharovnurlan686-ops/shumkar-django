@@ -12,8 +12,7 @@ from .models import SitePage, SiteSettings, Service, PortfolioProject, Lead
 
 
 def home(request):
-    # Берём опубликованную страницу из админки,
-    # если её нет — используем HTML-шаблон.
+    # Получаем опубликованную страницу из админки.
     page = SitePage.objects.filter(
         slug='home',
         is_published=True
@@ -41,7 +40,6 @@ def home(request):
             hero.clear()
             hero.append(settings_obj.hero_title)
 
-        # Обновляем WhatsApp только при заполненном номере.
         if settings_obj.whatsapp_number:
             whatsapp = 'https://wa.me/' + ''.join(
                 ch for ch in settings_obj.whatsapp_number
@@ -51,7 +49,6 @@ def home(request):
             for a in soup.select('a[href*="wa.me/"]'):
                 a['href'] = whatsapp
 
-        # Обновляем Instagram.
         if settings_obj.instagram_url:
             for a in soup.select('a[href*="instagram.com/"]'):
                 a['href'] = settings_obj.instagram_url
@@ -98,6 +95,7 @@ def home(request):
 
     # Портфолио из Django-админки
     portfolio_grid = soup.select_one('.portfolio-grid')
+
     projects = PortfolioProject.objects.filter(
         is_active=True
     ).order_by('sort_order', 'id')
@@ -123,21 +121,50 @@ def home(request):
                 attrs={'class': 'project-preview'}
             )
 
+            # Исправленный вывод изображения портфолио
+            image_url = None
+
             if item.image:
+                try:
+                    image_url = item.image.url
+                except (ValueError, OSError):
+                    image_url = None
+
+            if image_url:
                 img = soup.new_tag(
                     'img',
-                    src=item.image.url,
-                    alt=item.title,
-                    style='width:100%;height:100%;object-fit:cover'
+                    src=image_url,
+                    alt=item.title or 'Изображение проекта',
+                    loading='lazy'
                 )
+
+                img['style'] = (
+                    'display:block;'
+                    'width:100%;'
+                    'height:100%;'
+                    'min-height:200px;'
+                    'object-fit:cover;'
+                    'object-position:center;'
+                )
+
+                img['onerror'] = (
+                    "this.style.display='none';"
+                )
+
                 preview.append(img)
+
             else:
                 preview['style'] = (
-                    'display:flex;align-items:center;'
-                    'justify-content:center;font-size:32px;'
+                    'display:flex;'
+                    'align-items:center;'
+                    'justify-content:center;'
+                    'min-height:200px;'
+                    'font-size:32px;'
                     'color:#58d9ff;'
-                    'background:linear-gradient(145deg,#0d1b26,#070a0e)'
+                    'background:linear-gradient('
+                    '145deg,#0d1b26,#070a0e)'
                 )
+
                 preview.string = item.category or 'Проект'
 
             content = soup.new_tag(
@@ -168,14 +195,15 @@ def home(request):
                 'span',
                 attrs={'class': 'project-link'}
             )
-            link.string = 'Открыть проект ↗' if item.url else 'Проект'
+            link.string = (
+                'Открыть проект ↗' if item.url else 'Проект'
+            )
 
             content.extend([meta, title, desc, link])
             card.extend([preview, content])
             portfolio_grid.append(card)
 
     # Сохраняем копию заявок в Django-админке.
-    # Основная форма по-прежнему может открывать WhatsApp.
     script = soup.new_tag('script')
 
     script.string = r"""
