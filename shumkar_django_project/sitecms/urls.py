@@ -1,15 +1,16 @@
-from django.urls import path
+from django.contrib import admin
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
-
-from .views import home, save_lead
+from django.views.static import serve
 
 urlpatterns = [
-    path('', home, name='home'),
-    path('request/', save_lead, name='save_lead'),
-]
+    path('admin/', admin.site.urls),
 
-urlpatterns += static(
-    settings.MEDIA_URL,
-    document_root=settings.MEDIA_ROOT
-)
+    re_path(
+        r'^media/(?P<path>.*)$',
+        serve,
+        {'document_root': settings.MEDIA_ROOT},
+    ),
+
+    path('', include('sitecms.urls')),
+]
