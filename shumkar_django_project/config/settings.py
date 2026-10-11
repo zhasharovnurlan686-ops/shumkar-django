@@ -1,3 +1,4 @@
+
 import os
 from pathlib import Path
 
@@ -128,6 +129,7 @@ STORAGES = {
     },
 }
 
+# Загруженные изображения
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(
     os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media"))
