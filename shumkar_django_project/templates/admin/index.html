@@ -1,0 +1,43 @@
+﻿{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Добро пожаловать в Shumkar.ai</h1>
+    <p>Панель управления сайтом, заявками и контентом студии.</p>
+    <p><a href="/">Открыть главную страницу сайта</a></p>
+
+    {% if app_list %}
+        {% for app in app_list %}
+            <div class="module">
+                <table>
+                    <caption>{{ app.name }}</caption>
+                    {% for model in app.models %}
+                        <tr>
+                            <th scope="row">
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </th>
+                            <td>
+                                {% if model.add_url %}
+                                    <a href="{{ model.add_url }}">Добавить</a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">Изменить / посмотреть</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>У вашей учётной записи пока нет доступных разделов.</p>
+    {% endif %}
+</div>
+{% endblock %}

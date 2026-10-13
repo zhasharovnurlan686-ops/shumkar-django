@@ -1,27 +1,6364 @@
-{% extends "admin/base_site.html" %}
-{% load i18n %}
-{% block content %}
-<div class="sh-dashboard">
-  <div class="sh-welcome"><div><div class="sh-eyebrow">STUDIO CONTROL CENTER</div><h1>Добро пожаловать в Shumkar.ai</h1><p>Управляйте контентом студии, заявками и публикациями в одном месте.</p></div><a class="sh-site-link" href="/" target="_blank" rel="noopener">Открыть сайт ↗</a></div>
-  <div class="sh-stats">
-    <a class="sh-stat" href="/admin/sitecms/lead/"><span>Заявки сегодня</span><strong>{{ shumkar_dashboard.leads_today|default:0 }}</strong><small>Новые обращения за день</small></a>
-    <a class="sh-stat" href="/admin/sitecms/lead/"><span>Заявки за месяц</span><strong>{{ shumkar_dashboard.leads_month|default:0 }}</strong><small>Всего обращений в этом месяце</small></a>
-    <a class="sh-stat sh-stat-alert" href="/admin/sitecms/lead/?is_processed__exact=0"><span>Ждут ответа</span><strong>{{ shumkar_dashboard.leads_open|default:0 }}</strong><small>Не отмечены обработанными</small></a>
-    <a class="sh-stat" href="/admin/sitecms/portfolioproject/"><span>Проекты</span><strong>{{ shumkar_dashboard.projects_count|default:0 }}</strong><small>Портфолио студии</small></a>
-  </div>
-  <div class="sh-shortcuts"><h2>Быстрые действия</h2><div class="sh-shortcut-grid">
-    <a href="/admin/sitecms/portfolioproject/add/">＋ <span><b>Добавить проект</b><small>Обложка, описание и ссылка</small></span></a>
-    <a href="/admin/sitecms/service/add/">＋ <span><b>Добавить услугу</b><small>Название, описание и цена</small></span></a>
-    <a href="/admin/sitecms/lead/">↗ <span><b>Посмотреть заявки</b><small>Контакты и статусы клиентов</small></span></a>
-    <a href="/admin/sitecms/sitesettings/">⚙ <span><b>Настройки сайта</b><small>Заголовок, контакты и SEO</small></span></a>
-  </div></div>
-  <div class="sh-lower">
-    <section class="sh-panel"><h2>Последние заявки</h2>{% if shumkar_dashboard.recent_leads %}<div class="sh-leads">{% for lead in shumkar_dashboard.recent_leads %}<div class="sh-lead"><div class="sh-avatar">{{ lead.name|first|upper }}</div><div class="sh-lead-info"><b>{{ lead.name }}</b><small>{{ lead.service|default:"Услуга не указана" }} · {{ lead.created_at|date:"d.m.Y H:i" }}</small></div><a href="/admin/sitecms/lead/{{ lead.pk }}/change/">Открыть</a></div>{% endfor %}</div>{% else %}<p class="sh-empty">Заявок пока нет. Когда клиент отправит форму, она появится здесь.</p>{% endif %}</section>
-    <section class="sh-panel"><h2>Разделы управления</h2><div class="sh-sections">{% for app in app_list %}{% for model in app.models %}<a href="{{ model.admin_url }}"><span>{{ model.name }}</span><b>Открыть →</b></a>{% endfor %}{% endfor %}</div></section>
-  </div>
-  <div class="sh-footnote">Изменения в разделах «Портфолио», «Услуги» и «Настройки сайта» сохраняются в базе данных. Для публикации нового контента убедитесь, что включён флажок «Показывать на сайте».</div>
-</div>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#05070b">
+
+<title>Shumkar.ai — сайты и цифровые решения для бизнеса</title>
+
+<meta name="description" content="Shumkar.ai — создание современных сайтов, интернет-магазинов, лендингов и цифровых решений для бизнеса.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-.sh-dashboard{max-width:1320px;margin:0 auto;color:#e8eef8}.sh-welcome{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:12px 0 26px}.sh-eyebrow{color:#42c3ff;font-size:10px;font-weight:800;letter-spacing:2px}.sh-welcome h1{margin:8px 0;font-size:29px!important;letter-spacing:-.8px}.sh-welcome p{color:#8fa2bd;margin:0;font-size:14px}.sh-site-link{white-space:nowrap;padding:11px 15px;border:1px solid #2b4868;border-radius:10px;background:#11243a;font-weight:700}.sh-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.sh-stat{display:flex;flex-direction:column;gap:8px;padding:19px;border-radius:15px;border:1px solid #243650;background:linear-gradient(145deg,#121f33,#0f1828);text-decoration:none!important;transition:transform .2s,border-color .2s}.sh-stat:hover,.sh-shortcut-grid a:hover{transform:translateY(-2px);border-color:#2c9eea}.sh-stat span{font-size:12px;color:#a8bad1}.sh-stat strong{font-size:31px;color:#f4f8ff;line-height:1.1}.sh-stat small{font-size:11px;color:#7186a2}.sh-stat-alert strong{color:#ffc66d}.sh-shortcuts,.sh-panel{background:#101a2b;border:1px solid #243149;border-radius:15px;padding:20px;margin-bottom:18px}.sh-shortcuts h2,.sh-panel h2{font-size:16px!important;margin:0 0 16px;color:#f1f6ff}.sh-shortcut-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.sh-shortcut-grid a{display:flex;align-items:center;gap:12px;padding:15px;background:#0d1727;border:1px solid #26364f;border-radius:12px;font-size:22px;color:#42c3ff;text-decoration:none!important;transition:.2s}.sh-shortcut-grid span{display:flex;flex-direction:column;gap:5px}.sh-shortcut-grid b{font-size:12px;color:#e9f2ff}.sh-shortcut-grid small{font-size:10px;line-height:1.4;color:#8094af}.sh-lower{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.sh-lead{display:flex;align-items:center;gap:11px;padding:12px 0;border-top:1px solid #233149}.sh-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:11px;background:#173453;color:#51c9ff;font-weight:800}.sh-lead-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.sh-lead-info b{font-size:12px;color:#e9f2ff}.sh-lead-info small{font-size:10px;color:#8fa2bd;overflow:hidden;text-overflow:ellipsis}.sh-lead>a{font-size:11px}.sh-empty,.sh-footnote{color:#8195b0;font-size:12px;line-height:1.7}.sh-sections a{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #233149;font-size:12px}.sh-sections a span{color:#dce9f8}.sh-sections a b{color:#46c3ff;font-size:11px}.sh-footnote{padding:0 4px 16px}@media(max-width:1000px){.sh-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sh-shortcut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){#content{padding:14px}.sh-welcome{align-items:flex-start;flex-direction:column}.sh-welcome h1{font-size:24px!important}.sh-lower{grid-template-columns:1fr}.sh-stats{gap:9px}.sh-stat{padding:14px}.sh-stat strong{font-size:25px}.sh-shortcut-grid{grid-template-columns:1fr}.sh-site-link{width:100%;text-align:center;box-sizing:border-box}}
+
+/* =========================================================
+   SHUMKAR.AI
+   SINGLE HTML WEBSITE
+   MOBILE OPTIMIZED
+   ========================================================= */
+
+:root {
+    --bg: #05070b;
+    --bg2: #080c12;
+    --card: #0b1017;
+    --card2: #0e151e;
+
+    --white: #f4f8ff;
+    --muted: #8995a5;
+    --muted2: #657181;
+
+    --blue: #1ca9ff;
+    --blue2: #087dca;
+    --cyan: #58d9ff;
+
+    --border: rgba(255,255,255,.09);
+    --border2: rgba(55,190,255,.22);
+
+    --green: #25d366;
+
+    --radius: 24px;
+    --radius2: 32px;
+
+    --container: 1180px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background:
+        radial-gradient(circle at 75% 5%, rgba(16,140,220,.12), transparent 28%),
+        radial-gradient(circle at 15% 35%, rgba(20,110,170,.07), transparent 25%),
+        var(--bg);
+
+    color: var(--white);
+    font-family: "DM Sans", sans-serif;
+    overflow-x: hidden;
+    min-width: 320px;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background-image:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+
+    background-size: 70px 70px;
+
+    mask-image: linear-gradient(to bottom, black, transparent 80%);
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent 80%);
+
+    z-index: -2;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.container {
+    width: min(var(--container), calc(100% - 40px));
+    margin: 0 auto;
+}
+
+.section {
+    padding: 120px 0;
+}
+
+.section-sm {
+    padding: 80px 0;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    z-index: 1000;
+
+    border-bottom: 1px solid transparent;
+
+    transition: .3s ease;
+}
+
+.header.scrolled {
+    background: rgba(5,7,11,.88);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+
+    border-color: var(--border);
+}
+
+.nav {
+    height: 82px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: 21px;
+    font-weight: 800;
+
+    letter-spacing: -.8px;
+
+    flex-shrink: 0;
+}
+
+.logo-mark {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(circle at 50% 30%, #8eeaff, #138ed3 45%, #052d53 100%);
+
+    box-shadow:
+        0 0 25px rgba(20,169,255,.3),
+        inset 0 0 20px rgba(255,255,255,.18);
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+}
+
+.logo-mark svg {
+    width: 34px;
+    height: 34px;
+}
+
+.logo-text {
+    white-space: nowrap;
+}
+
+.logo-text span {
+    color: var(--blue);
+}
+
+.nav-links {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+}
+
+.nav-links a {
+    color: #9ba7b5;
+    font-size: 14px;
+    transition: .25s;
+}
+
+.nav-links a:hover {
+    color: white;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn {
+    border: 0;
+    border-radius: 12px;
+
+    padding: 13px 19px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    font-weight: 700;
+    font-size: 14px;
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease,
+        background .25s ease;
+
+    min-height: 46px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    color: #00101a;
+
+    background:
+        linear-gradient(
+            135deg,
+            #65dcff,
+            #149ce6
+        );
+
+    box-shadow:
+        0 8px 35px rgba(25,163,229,.22);
+}
+
+.btn-primary:hover {
+    box-shadow:
+        0 12px 45px rgba(25,163,229,.4);
+}
+
+.btn-outline {
+    color: white;
+
+    background: rgba(255,255,255,.035);
+
+    border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+    border-color: var(--border2);
+    background: rgba(30,150,220,.07);
+}
+
+.menu-btn {
+    display: none;
+
+    width: 44px;
+    height: 44px;
+
+    border-radius: 12px;
+
+    border: 1px solid var(--border);
+
+    background: rgba(255,255,255,.04);
+
+    color: white;
+
+    font-size: 20px;
+}
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero {
+    min-height: 900px;
+
+    padding-top: 160px;
+
+    display: flex;
+    align-items: center;
+
+    position: relative;
+}
+
+.hero::before {
+    content: "";
+
+    position: absolute;
+
+    width: 600px;
+    height: 600px;
+
+    right: -250px;
+    top: 100px;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(23,163,230,.19),
+            transparent 65%
+        );
+
+    filter: blur(20px);
+
+    pointer-events: none;
+}
+
+.hero-grid {
+    display: grid;
+
+    grid-template-columns: 1.05fr .95fr;
+
+    gap: 70px;
+
+    align-items: center;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 8px 12px;
+
+    border-radius: 999px;
+
+    background: rgba(35,170,230,.07);
+
+    border: 1px solid rgba(42,178,238,.18);
+
+    color: #8bdfff;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: .5px;
+
+    text-transform: uppercase;
+}
+
+.eyebrow-dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #37c8ff;
+
+    box-shadow: 0 0 14px #37c8ff;
+
+    flex-shrink: 0;
+}
+
+.hero h1 {
+    margin-top: 25px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: clamp(54px, 7vw, 92px);
+
+    line-height: .98;
+
+    letter-spacing: -5px;
+
+    font-weight: 800;
+}
+
+.hero h1 span {
+    color: transparent;
+
+    background:
+        linear-gradient(
+            110deg,
+            #ffffff,
+            #58d9ff,
+            #138bd0
+        );
+
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+.hero-description {
+    max-width: 620px;
+
+    margin-top: 27px;
+
+    color: #929eac;
+
+    font-size: 18px;
+
+    line-height: 1.7;
+}
+
+.hero-buttons {
+    display: flex;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+
+    margin-top: 35px;
+}
+
+.hero-note {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 27px;
+
+    color: #6f7c8c;
+
+    font-size: 13px;
+}
+
+.hero-note-icon {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 1px solid var(--border);
+
+    color: #62d7ff;
+
+    flex-shrink: 0;
+}
+
+/* =========================================================
+   HERO VISUAL
+   ========================================================= */
+
+.hero-visual {
+    min-height: 560px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+}
+
+.orbit {
+    width: 460px;
+    height: 460px;
+
+    border: 1px solid rgba(75,191,238,.14);
+
+    border-radius: 50%;
+
+    position: relative;
+
+    animation: float 7s ease-in-out infinite;
+}
+
+.orbit::before,
+.orbit::after {
+    content: "";
+
+    position: absolute;
+
+    inset: 45px;
+
+    border: 1px solid rgba(75,191,238,.1);
+
+    border-radius: 50%;
+}
+
+.orbit::after {
+    inset: 105px;
+}
+
+@keyframes float {
+
+    0%,100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+
+}
+
+.hero-logo-big {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    width: 270px;
+    height: 270px;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at 40% 25%,
+            rgba(151,238,255,.8),
+            rgba(27,140,202,.4) 42%,
+            rgba(2,20,36,.95) 78%
+        );
+
+    border: 1px solid rgba(117,222,255,.4);
+
+    box-shadow:
+        0 0 90px rgba(25,172,233,.25),
+        inset 0 0 70px rgba(73,209,255,.13);
+}
+
+.big-eagle {
+    width: 125px;
+    height: 125px;
+
+    margin-bottom: 3px;
+}
+
+.hero-logo-big strong {
+    font-family: "Manrope", sans-serif;
+
+    font-size: 26px;
+
+    letter-spacing: -1.3px;
+}
+
+.hero-logo-big strong span {
+    color: #49cfff;
+}
+
+.floating-card {
+    position: absolute;
+
+    padding: 15px 18px;
+
+    border-radius: 15px;
+
+    background: rgba(8,13,20,.78);
+
+    border: 1px solid var(--border);
+
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.35);
+
+    z-index: 5;
+}
+
+.floating-card small {
+    color: #687688;
+
+    display: block;
+
+    font-size: 10px;
+
+    margin-bottom: 5px;
+}
+
+.floating-card strong {
+    font-size: 14px;
+}
+
+.card-one {
+    left: -15px;
+    top: 95px;
+}
+
+.card-two {
+    right: -20px;
+    top: 180px;
+}
+
+.card-three {
+    left: 30px;
+    bottom: 70px;
+}
+
+/* =========================================================
+   MARQUEE
+   ========================================================= */
+
+.marquee {
+    overflow: hidden;
+
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+
+    background: rgba(255,255,255,.018);
+}
+
+.marquee-track {
+    display: flex;
+
+    width: max-content;
+
+    animation:
+        marquee 30s linear infinite;
+}
+
+.marquee-item {
+    padding: 20px 30px;
+
+    color: #738092;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1.7px;
+
+    white-space: nowrap;
+}
+
+.marquee-item::after {
+    content: "✦";
+
+    margin-left: 30px;
+
+    color: #238ec4;
+}
+
+@keyframes marquee {
+
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+
+}
+
+/* =========================================================
+   SECTION HEADERS
+   ========================================================= */
+
+.section-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 30px;
+
+    margin-bottom: 50px;
+}
+
+.section-label {
+    color: #3fbfff;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1.7px;
+
+    margin-bottom: 13px;
+}
+
+.section-title {
+    max-width: 760px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: clamp(38px, 5vw, 65px);
+
+    line-height: 1.03;
+
+    letter-spacing: -3px;
+}
+
+.section-description {
+    max-width: 430px;
+
+    color: #7f8b9b;
+
+    font-size: 15px;
+
+    line-height: 1.7;
+}
+
+/* =========================================================
+   SERVICES
+   ========================================================= */
+
+.services-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 15px;
+}
+
+.service-card {
+    min-height: 330px;
+
+    padding: 30px;
+
+    border-radius: var(--radius);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.04),
+            rgba(255,255,255,.012)
+        );
+
+    border: 1px solid var(--border);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    transition: .35s ease;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.service-card::before {
+    content: "";
+
+    position: absolute;
+
+    width: 170px;
+    height: 170px;
+
+    right: -80px;
+    top: -80px;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(35,176,236,.16),
+            transparent 70%
+        );
+}
+
+.service-card:hover {
+    transform: translateY(-6px);
+
+    border-color: rgba(55,194,248,.25);
+
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.25);
+}
+
+.service-icon {
+    width: 53px;
+    height: 53px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background: rgba(28,164,225,.09);
+
+    border: 1px solid rgba(47,179,237,.17);
+
+    color: #55d4ff;
+
+    font-size: 21px;
+}
+
+.service-card h3 {
+    margin-top: 35px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: 24px;
+}
+
+.service-card p {
+    margin-top: 10px;
+
+    color: #788596;
+
+    line-height: 1.65;
+
+    font-size: 14px;
+}
+
+.service-bottom {
+    margin-top: 30px;
+
+    color: #4acbff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   STATS
+   ========================================================= */
+
+.stats {
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.stat {
+    padding: 35px 25px;
+
+    border-right: 1px solid var(--border);
+}
+
+.stat:last-child {
+    border-right: 0;
+}
+
+.stat strong {
+    display: block;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: 36px;
+
+    letter-spacing: -2px;
+}
+
+.stat span {
+    display: block;
+
+    margin-top: 7px;
+
+    color: #758293;
+
+    font-size: 13px;
+}
+
+/* =========================================================
+   WHY US
+   ========================================================= */
+
+.why-grid {
+    display: grid;
+
+    grid-template-columns: .9fr 1.1fr;
+
+    gap: 80px;
+}
+
+.why-list {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 12px;
+}
+
+.why-card {
+    padding: 26px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.018);
+}
+
+.why-number {
+    color: #35bdf8;
+
+    font-size: 12px;
+
+    font-weight: 800;
+}
+
+.why-card h3 {
+    margin-top: 30px;
+
+    font-size: 17px;
+}
+
+.why-card p {
+    margin-top: 9px;
+
+    color: #748091;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+/* =========================================================
+   PORTFOLIO
+   ========================================================= */
+
+.portfolio-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 18px;
+}
+
+.project-card {
+    min-height: 500px;
+
+    padding: 12px;
+
+    border-radius: 27px;
+
+    background: #090e15;
+
+    border: 1px solid var(--border);
+
+    overflow: hidden;
+
+    transition: .35s;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+
+    border-color: rgba(44,191,249,.27);
+}
+
+.project-preview {
+    height: 300px;
+
+    border-radius: 19px;
+
+    position: relative;
+
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.project-preview.shop {
+    background:
+        linear-gradient(
+            135deg,
+            #1e2530,
+            #111923 50%,
+            #070b10
+        );
+}
+
+.project-preview.logoped {
+    background:
+        linear-gradient(
+            135deg,
+            #b7d8c6,
+            #e9dfc7 48%,
+            #91b7a2
+        );
+}
+
+.project-preview.barber {
+    background:
+        linear-gradient(
+            135deg,
+            #171717,
+            #4b3728 50%,
+            #0b0b0b
+        );
+}
+
+.preview-window {
+    width: 74%;
+    height: 74%;
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.08);
+
+    border: 1px solid rgba(255,255,255,.15);
+
+    box-shadow:
+        0 30px 70px rgba(0,0,0,.4);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    padding: 16px;
+}
+
+.preview-top {
+    display: flex;
+
+    gap: 5px;
+}
+
+.preview-dot {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.5);
+}
+
+.preview-lines {
+    margin-top: 30px;
+}
+
+.preview-line {
+    height: 7px;
+
+    margin-bottom: 9px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.25);
+}
+
+.preview-line.big {
+    width: 75%;
+    height: 25px;
+}
+
+.preview-line.medium {
+    width: 55%;
+}
+
+.preview-line.small {
+    width: 35%;
+}
+
+.project-content {
+    padding: 22px 15px 15px;
+}
+
+.project-meta {
+    display: flex;
+    justify-content: space-between;
+
+    color: #6f7c8c;
+
+    font-size: 11px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+}
+
+.project-content h3 {
+    margin-top: 10px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: 25px;
+}
+
+.project-content p {
+    margin-top: 8px;
+
+    color: #768394;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+.project-link {
+    display: inline-flex;
+
+    margin-top: 18px;
+
+    color: #55d4ff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   FEATURED CASE
+   ========================================================= */
+
+.featured {
+    border-radius: 32px;
+
+    border: 1px solid var(--border);
+
+    padding: 55px;
+
+    background:
+        radial-gradient(
+            circle at 90% 0%,
+            rgba(33,174,234,.16),
+            transparent 40%
+        ),
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.04),
+            rgba(255,255,255,.01)
+        );
+}
+
+.featured-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 70px;
+
+    align-items: center;
+}
+
+.featured h3 {
+    margin-top: 10px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: clamp(34px, 4vw, 55px);
+
+    line-height: 1.04;
+
+    letter-spacing: -2.5px;
+}
+
+.featured p {
+    margin-top: 20px;
+
+    color: #8290a0;
+
+    line-height: 1.7;
+}
+
+.featured-tags {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-top: 25px;
+}
+
+.tag {
+    padding: 8px 11px;
+
+    border-radius: 999px;
+
+    color: #9ba7b5;
+
+    background: rgba(255,255,255,.035);
+
+    border: 1px solid var(--border);
+
+    font-size: 11px;
+}
+
+.case-screen {
+    min-height: 350px;
+
+    border-radius: 22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #111a24,
+            #071017
+        );
+
+    border: 1px solid rgba(72,193,241,.18);
+
+    padding: 25px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    box-shadow:
+        0 40px 100px rgba(0,0,0,.4);
+}
+
+.case-ui {
+    width: 85%;
+
+    min-height: 250px;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            140deg,
+            rgba(48,198,255,.13),
+            rgba(255,255,255,.035)
+        );
+
+    border: 1px solid rgba(255,255,255,.1);
+
+    padding: 20px;
+}
+
+.case-header {
+    display: flex;
+
+    justify-content: space-between;
+}
+
+.case-pill {
+    width: 70px;
+    height: 10px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.18);
+}
+
+.case-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+
+    margin-top: 35px;
+}
+
+.case-box {
+    height: 75px;
+
+    border-radius: 10px;
+
+    background: rgba(255,255,255,.06);
+
+    border: 1px solid rgba(255,255,255,.06);
+}
+
+/* =========================================================
+   PROCESS
+   ========================================================= */
+
+.process {
+    position: relative;
+}
+
+.process-list {
+    border-top: 1px solid var(--border);
+}
+
+.process-item {
+    display: grid;
+
+    grid-template-columns: 100px 1fr 1fr;
+
+    padding: 36px 0;
+
+    border-bottom: 1px solid var(--border);
+
+    transition: .25s;
+}
+
+.process-item:hover {
+    padding-left: 15px;
+}
+
+.process-number {
+    color: #3ec7ff;
+
+    font-size: 12px;
+
+    font-weight: 800;
+}
+
+.process-item h3 {
+    font-family: "Manrope", sans-serif;
+
+    font-size: 22px;
+}
+
+.process-item p {
+    color: #758294;
+
+    line-height: 1.6;
+
+    font-size: 14px;
+}
+
+/* =========================================================
+   PRICING
+   ========================================================= */
+
+.pricing-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 14px;
+}
+
+.price-card {
+    padding: 31px;
+
+    border-radius: 24px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.04),
+            rgba(255,255,255,.012)
+        );
+
+    border: 1px solid var(--border);
+
+    position: relative;
+}
+
+.price-card.featured-price {
+    border-color: rgba(51,190,246,.35);
+
+    box-shadow:
+        0 25px 80px rgba(15,155,220,.09);
+}
+
+.price-badge {
+    position: absolute;
+
+    right: 20px;
+    top: 20px;
+
+    padding: 6px 9px;
+
+    border-radius: 999px;
+
+    background: rgba(40,194,249,.1);
+
+    border: 1px solid rgba(40,194,249,.2);
+
+    color: #4bd0ff;
+
+    font-size: 10px;
+
+    font-weight: 800;
+}
+
+.price-card h3 {
+    font-size: 19px;
+}
+
+.price {
+    margin-top: 25px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: 38px;
+
+    font-weight: 800;
+
+    letter-spacing: -2px;
+}
+
+.price span {
+    color: #6e7b8c;
+
+    font-size: 12px;
+
+    font-weight: 400;
+
+    letter-spacing: 0;
+}
+
+.price-card > p {
+    margin-top: 10px;
+
+    color: #748192;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+.features {
+    margin-top: 25px;
+
+    list-style: none;
+}
+
+.features li {
+    display: flex;
+
+    gap: 10px;
+
+    margin: 11px 0;
+
+    color: #a4afbc;
+
+    font-size: 13px;
+}
+
+.features li::before {
+    content: "✓";
+
+    color: #42c9ff;
+}
+
+.price-card .btn {
+    width: 100%;
+
+    margin-top: 25px;
+}
+
+/* =========================================================
+   TESTIMONIALS
+   ========================================================= */
+
+.testimonials {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 14px;
+}
+
+.testimonial {
+    padding: 30px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.025);
+
+    border: 1px solid var(--border);
+}
+
+.stars {
+    color: #54d4ff;
+
+    letter-spacing: 3px;
+
+    font-size: 12px;
+}
+
+.testimonial p {
+    margin-top: 22px;
+
+    color: #929dab;
+
+    line-height: 1.7;
+
+    font-size: 14px;
+}
+
+.author {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 25px;
+}
+
+.author-avatar {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #55d8ff,
+            #086aa8
+        );
+
+    font-weight: 800;
+
+    font-size: 13px;
+
+    flex-shrink: 0;
+}
+
+.author strong {
+    display: block;
+
+    font-size: 13px;
+}
+
+.author span {
+    color: #697688;
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   FAQ
+   ========================================================= */
+
+.faq {
+    max-width: 900px;
+}
+
+.faq-item {
+    border-top: 1px solid var(--border);
+}
+
+.faq-item:last-child {
+    border-bottom: 1px solid var(--border);
+}
+
+.faq-question {
+    width: 100%;
+
+    padding: 24px 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: white;
+
+    text-align: left;
+
+    font-size: 16px;
+
+    font-weight: 600;
+}
+
+.faq-plus {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 1px solid var(--border);
+
+    color: #55d4ff;
+
+    transition: .25s;
+
+    flex-shrink: 0;
+}
+
+.faq-answer {
+    max-height: 0;
+
+    overflow: hidden;
+
+    color: #788596;
+
+    line-height: 1.7;
+
+    font-size: 14px;
+
+    transition: max-height .35s ease;
+}
+
+.faq-answer-inner {
+    padding: 0 0 25px;
+}
+
+.faq-item.active .faq-answer {
+    max-height: 300px;
+}
+
+.faq-item.active .faq-plus {
+    transform: rotate(45deg);
+}
+
+/* =========================================================
+   CTA
+   ========================================================= */
+
+.cta {
+    padding: 85px 60px;
+
+    border-radius: 35px;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(40,188,247,.17),
+            transparent 50%
+        ),
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.05),
+            rgba(255,255,255,.015)
+        );
+
+    border: 1px solid var(--border);
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.cta h2 {
+    font-family: "Manrope", sans-serif;
+
+    font-size: clamp(40px, 5vw, 68px);
+
+    letter-spacing: -3px;
+
+    line-height: 1;
+}
+
+.cta p {
+    max-width: 600px;
+
+    margin: 20px auto 0;
+
+    color: #7e8a9a;
+
+    line-height: 1.7;
+}
+
+.cta-buttons {
+    display: flex;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+
+    margin-top: 30px;
+}
+
+/* =========================================================
+   CONTACT FORM
+   ========================================================= */
+
+.form-section {
+    padding-top: 30px;
+}
+
+.form-layout {
+    display: grid;
+
+    grid-template-columns: .8fr 1.2fr;
+
+    gap: 50px;
+
+    align-items: start;
+}
+
+.form-info h2 {
+    margin-top: 10px;
+
+    font-family: "Manrope", sans-serif;
+
+    font-size: clamp(38px, 4vw, 56px);
+
+    line-height: 1.03;
+
+    letter-spacing: -2.5px;
+}
+
+.form-info > p {
+    margin-top: 20px;
+
+    color: #7c8999;
+
+    line-height: 1.7;
+}
+
+.contact-points {
+    margin-top: 35px;
+}
+
+.contact-point {
+    display: flex;
+
+    gap: 14px;
+
+    margin-top: 18px;
+}
+
+.contact-icon {
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: rgba(35,181,238,.08);
+
+    border: 1px solid rgba(35,181,238,.16);
+
+    color: #51d2ff;
+}
+
+.contact-point strong {
+    display: block;
+
+    font-size: 13px;
+}
+
+.contact-point span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #6e7b8b;
+
+    font-size: 12px;
+}
+
+.form-card {
+    padding: 30px;
+
+    border-radius: 26px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.045),
+            rgba(255,255,255,.012)
+        );
+
+    border: 1px solid var(--border);
+}
+
+.form-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #8995a5;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+
+    padding: 14px 15px;
+
+    border-radius: 12px;
+
+    border: 1px solid var(--border);
+
+    background: rgba(0,0,0,.18);
+
+    color: white;
+
+    outline: none;
+
+    transition: .25s;
+
+    min-height: 48px;
+}
+
+.form-control::placeholder {
+    color: #4f5c6b;
+}
+
+.form-control:focus {
+    border-color: rgba(54,194,249,.45);
+
+    box-shadow:
+        0 0 0 3px rgba(40,185,241,.06);
+}
+
+textarea.form-control {
+    min-height: 125px;
+
+    resize: vertical;
+}
+
+select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.whatsapp-submit {
+    width: 100%;
+
+    margin-top: 8px;
+
+    padding: 16px;
+
+    min-height: 52px;
+
+    border: 0;
+
+    border-radius: 13px;
+
+    background: #25d366;
+
+    color: #001b0b;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    transition: .25s;
+}
+
+.whatsapp-submit:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 35px rgba(37,211,102,.18);
+}
+
+.form-hint {
+    margin-top: 12px;
+
+    color: #596677;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+}
+
+/* =========================================================
+   FLOATING WHATSAPP
+   ========================================================= */
+
+.whatsapp-float {
+    position: fixed;
+
+    right: 22px;
+    bottom: 22px;
+
+    width: 58px;
+    height: 58px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #25d366;
+
+    color: white;
+
+    z-index: 900;
+
+    box-shadow:
+        0 10px 35px rgba(37,211,102,.25);
+
+    transition: .25s;
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.08);
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.footer {
+    padding: 70px 0 30px;
+
+    border-top: 1px solid var(--border);
+}
+
+.footer-top {
+    display: grid;
+
+    grid-template-columns: 1.3fr .7fr .7fr;
+
+    gap: 60px;
+}
+
+.footer-description {
+    max-width: 350px;
+
+    margin-top: 18px;
+
+    color: #6e7b8b;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+}
+
+.footer-title {
+    color: #dce4ed;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+}
+
+.footer-links {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    margin-top: 18px;
+}
+
+.footer-links a {
+    color: #697687;
+
+    font-size: 13px;
+
+    transition: .2s;
+}
+
+.footer-links a:hover {
+    color: white;
+}
+
+.footer-bottom {
+    margin-top: 60px;
+
+    padding-top: 20px;
+
+    border-top: 1px solid var(--border);
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    color: #4e5a69;
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 2000;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0,0,0,.72);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    transition: .25s;
+}
+
+.modal.active {
+    opacity: 1;
+
+    visibility: visible;
+}
+
+.modal-box {
+    width: min(560px, 100%);
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 32px;
+
+    border-radius: 25px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #0e151d,
+            #080c12
+        );
+
+    border: 1px solid var(--border);
+
+    position: relative;
+
+    transform: translateY(15px);
+
+    transition: .25s;
+}
+
+.modal.active .modal-box {
+    transform: translateY(0);
+}
+
+.modal-close {
+    position: absolute;
+
+    right: 18px;
+    top: 18px;
+
+    width: 36px;
+    height: 36px;
+
+    border-radius: 50%;
+
+    border: 1px solid var(--border);
+
+    background: rgba(255,255,255,.03);
+
+    color: white;
+
+    font-size: 20px;
+}
+
+.modal-box h3 {
+    font-family: "Manrope", sans-serif;
+
+    font-size: 27px;
+
+    padding-right: 40px;
+}
+
+.modal-box > p {
+    margin-top: 8px;
+
+    color: #748091;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+/* =========================================================
+   REVEAL
+   ========================================================= */
+
+.reveal {
+    opacity: 0;
+
+    transform: translateY(30px);
+
+    transition:
+        opacity .7s ease,
+        transform .7s ease;
+}
+
+.reveal.visible {
+    opacity: 1;
+
+    transform: translateY(0);
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+    .nav-links {
+        display: none;
+    }
+
+    .menu-btn {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-actions .btn-outline {
+        display: none;
+    }
+
+    .hero-grid,
+    .why-grid,
+    .featured-grid,
+    .form-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        min-height: auto;
+
+        padding-bottom: 100px;
+    }
+
+    .hero-visual {
+        min-height: 500px;
+    }
+
+    .services-grid,
+    .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .testimonials {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .footer-top {
+        grid-template-columns: 1fr 1fr;
+    }
+
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    html {
+        overflow-x: hidden;
+    }
+
+    body {
+        overflow-x: hidden;
+    }
+
+    .container {
+        width: calc(100% - 28px);
+
+        max-width: 100%;
+    }
+
+    .section {
+        padding: 75px 0;
+    }
+
+    .section-sm {
+        padding: 50px 0;
+    }
+
+    /* HEADER */
+
+    .nav {
+        height: 68px;
+    }
+
+    .logo {
+        font-size: 18px;
+
+        gap: 9px;
+    }
+
+    .logo-mark {
+        width: 36px;
+        height: 36px;
+    }
+
+    .logo-mark svg {
+        width: 29px;
+        height: 29px;
+    }
+
+    .menu-btn {
+        width: 42px;
+        height: 42px;
+
+        font-size: 19px;
+    }
+
+    /* MOBILE MENU */
+
+    .nav-links.mobile-open {
+        display: flex !important;
+    }
+
+    /* HERO */
+
+    .hero {
+        padding-top: 105px;
+
+        padding-bottom: 55px;
+
+        min-height: auto;
+    }
+
+    .hero::before {
+        width: 380px;
+        height: 380px;
+
+        right: -220px;
+        top: 100px;
+    }
+
+    .hero-grid {
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 20px;
+    }
+
+    .hero-content {
+        width: 100%;
+    }
+
+    .eyebrow {
+        max-width: 100%;
+
+        padding: 7px 10px;
+
+        font-size: 10px;
+
+        letter-spacing: .35px;
+    }
+
+    .eyebrow-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .hero h1 {
+        margin-top: 20px;
+
+        font-size: clamp(42px, 12vw, 54px);
+
+        line-height: .98;
+
+        letter-spacing: -3px;
+    }
+
+    .hero-description {
+        margin-top: 20px;
+
+        font-size: 15px;
+
+        line-height: 1.65;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+
+        width: 100%;
+
+        gap: 9px;
+
+        margin-top: 25px;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+
+        min-height: 50px;
+    }
+
+    .hero-note {
+        align-items: flex-start;
+
+        margin-top: 18px;
+
+        font-size: 12px;
+
+        line-height: 1.45;
+    }
+
+    .hero-note-icon {
+        width: 28px;
+        height: 28px;
+
+        flex: 0 0 28px;
+    }
+
+    /* HERO VISUAL */
+
+    .hero-visual {
+        width: 100%;
+
+        min-height: 355px;
+
+        margin-top: 0;
+    }
+
+    .orbit {
+        width: 285px;
+        height: 285px;
+    }
+
+    .orbit::before {
+        inset: 32px;
+    }
+
+    .orbit::after {
+        inset: 70px;
+    }
+
+    .hero-logo-big {
+        width: 175px;
+        height: 175px;
+    }
+
+    .big-eagle {
+        width: 76px;
+        height: 76px;
+    }
+
+    .hero-logo-big strong {
+        font-size: 18px;
+    }
+
+    .floating-card {
+        padding: 9px 11px;
+
+        border-radius: 12px;
+    }
+
+    .floating-card small {
+        font-size: 8px;
+
+        margin-bottom: 3px;
+    }
+
+    .floating-card strong {
+        font-size: 10px;
+    }
+
+    .card-one {
+        left: -2px;
+        top: 42px;
+    }
+
+    .card-two {
+        right: -2px;
+        top: 112px;
+    }
+
+    .card-three {
+        left: 0;
+        bottom: 30px;
+    }
+
+    /* MARQUEE */
+
+    .marquee-item {
+        padding: 16px 18px;
+
+        font-size: 10px;
+
+        letter-spacing: 1.3px;
+    }
+
+    .marquee-item::after {
+        margin-left: 18px;
+    }
+
+    /* SECTION */
+
+    .section-top {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 15px;
+
+        margin-bottom: 30px;
+    }
+
+    .section-label {
+        font-size: 10px;
+
+        letter-spacing: 1.4px;
+
+        margin-bottom: 9px;
+    }
+
+    .section-title {
+        width: 100%;
+
+        font-size: clamp(34px, 10vw, 42px);
+
+        line-height: 1.02;
+
+        letter-spacing: -2px;
+    }
+
+    .section-description {
+        max-width: 100%;
+
+        font-size: 14px;
+
+        line-height: 1.65;
+    }
+
+    /* SERVICES */
+
+    .services-grid {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .service-card {
+        min-height: 0;
+
+        padding: 23px;
+
+        border-radius: 20px;
+    }
+
+    .service-icon {
+        width: 48px;
+        height: 48px;
+
+        border-radius: 13px;
+    }
+
+    .service-card h3 {
+        margin-top: 25px;
+
+        font-size: 21px;
+    }
+
+    .service-card p {
+        font-size: 13px;
+
+        line-height: 1.6;
+    }
+
+    .service-bottom {
+        margin-top: 24px;
+
+        font-size: 12px;
+    }
+
+    /* STATS */
+
+    .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stat {
+        padding: 25px 17px;
+
+        min-width: 0;
+    }
+
+    .stat:nth-child(2) {
+        border-right: 0;
+    }
+
+    .stat:nth-child(-n+2) {
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stat strong {
+        font-size: 30px;
+
+        letter-spacing: -1.5px;
+    }
+
+    .stat span {
+        font-size: 11px;
+
+        line-height: 1.4;
+    }
+
+    /* WHY */
+
+    .why-grid {
+        gap: 35px;
+    }
+
+    .why-list {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .why-card {
+        padding: 22px;
+
+        border-radius: 18px;
+    }
+
+    .why-card h3 {
+        margin-top: 22px;
+
+        font-size: 16px;
+    }
+
+    .why-card p {
+        font-size: 12px;
+    }
+
+    /* PORTFOLIO */
+
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+    }
+
+    .project-card {
+        min-height: 0;
+
+        padding: 9px;
+
+        border-radius: 21px;
+    }
+
+    .project-preview {
+        height: 220px;
+
+        border-radius: 15px;
+    }
+
+    .preview-window {
+        width: 76%;
+        height: 72%;
+
+        padding: 12px;
+
+        border-radius: 10px;
+    }
+
+    .preview-lines {
+        margin-top: 20px;
+    }
+
+    .preview-line.big {
+        height: 20px;
+    }
+
+    .project-content {
+        padding: 18px 11px 12px;
+    }
+
+    .project-meta {
+        font-size: 9px;
+    }
+
+    .project-content h3 {
+        font-size: 21px;
+    }
+
+    .project-content p {
+        font-size: 12px;
+    }
+
+    .project-link {
+        margin-top: 14px;
+
+        font-size: 12px;
+    }
+
+    /* FEATURED */
+
+    .featured {
+        padding: 23px;
+
+        border-radius: 24px;
+    }
+
+    .featured-grid {
+        gap: 35px;
+    }
+
+    .featured h3 {
+        font-size: 34px;
+
+        letter-spacing: -1.8px;
+    }
+
+    .featured p {
+        font-size: 14px;
+    }
+
+    .featured-tags {
+        gap: 6px;
+
+        margin-top: 20px;
+    }
+
+    .tag {
+        padding: 7px 9px;
+
+        font-size: 10px;
+    }
+
+    .featured .btn {
+        width: 100%;
+
+        margin-top: 23px !important;
+    }
+
+    .case-screen {
+        min-height: 230px;
+
+        padding: 15px;
+
+        border-radius: 17px;
+    }
+
+    .case-ui {
+        width: 92%;
+
+        min-height: 180px;
+
+        padding: 14px;
+
+        border-radius: 12px;
+    }
+
+    .case-grid {
+        margin-top: 20px;
+
+        gap: 7px;
+    }
+
+    .case-box {
+        height: 48px;
+    }
+
+    /* PROCESS */
+
+    .process-item {
+        grid-template-columns: 45px 1fr;
+
+        gap: 7px;
+
+        padding: 25px 0;
+    }
+
+    .process-item:hover {
+        padding-left: 0;
+    }
+
+    .process-number {
+        font-size: 11px;
+    }
+
+    .process-item h3 {
+        font-size: 18px;
+
+        line-height: 1.3;
+    }
+
+    .process-item p {
+        grid-column: 2;
+
+        font-size: 13px;
+
+        line-height: 1.6;
+    }
+
+    /* PRICES */
+
+    .pricing-grid {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .price-card {
+        padding: 25px;
+
+        border-radius: 20px;
+    }
+
+    .price-card h3 {
+        font-size: 18px;
+    }
+
+    .price {
+        margin-top: 20px;
+
+        font-size: 34px;
+    }
+
+    .price-card > p {
+        font-size: 12px;
+    }
+
+    .features {
+        margin-top: 20px;
+    }
+
+    .features li {
+        font-size: 12px;
+
+        margin: 10px 0;
+    }
+
+    .price-card .btn {
+        min-height: 48px;
+    }
+
+    /* TESTIMONIALS */
+
+    .testimonials {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .testimonial {
+        padding: 23px;
+
+        border-radius: 19px;
+    }
+
+    .testimonial p {
+        margin-top: 18px;
+
+        font-size: 13px;
+    }
+
+    /* FAQ */
+
+    .faq-question {
+        padding: 20px 0;
+
+        font-size: 14px;
+
+        line-height: 1.4;
+    }
+
+    .faq-plus {
+        width: 30px;
+        height: 30px;
+
+        flex: 0 0 30px;
+    }
+
+    .faq-answer {
+        font-size: 13px;
+    }
+
+    .faq-answer-inner {
+        padding-bottom: 20px;
+    }
+
+    /* CTA */
+
+    .cta {
+        padding: 48px 20px;
+
+        border-radius: 25px;
+    }
+
+    .cta h2 {
+        font-size: 38px;
+
+        letter-spacing: -2px;
+    }
+
+    .cta p {
+        font-size: 13px;
+
+        line-height: 1.65;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+
+        width: 100%;
+    }
+
+    .cta-buttons .btn {
+        width: 100%;
+
+        min-height: 50px;
+    }
+
+    /* CONTACT */
+
+    .form-section {
+        padding-top: 10px;
+    }
+
+    .form-layout {
+        gap: 35px;
+    }
+
+    .form-info h2 {
+        font-size: 37px;
+
+        letter-spacing: -2px;
+    }
+
+    .form-info > p {
+        font-size: 14px;
+    }
+
+    .contact-points {
+        margin-top: 25px;
+    }
+
+    .contact-point {
+        margin-top: 15px;
+    }
+
+    .form-card {
+        padding: 18px;
+
+        border-radius: 21px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+
+        gap: 0;
+    }
+
+    .form-group {
+        margin-bottom: 13px;
+    }
+
+    .form-group label {
+        font-size: 11px;
+    }
+
+    .form-control {
+        min-height: 49px;
+
+        padding: 13px;
+
+        font-size: 14px;
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+    }
+
+    .whatsapp-submit {
+        min-height: 53px;
+
+        padding: 15px 10px;
+
+        font-size: 13px;
+    }
+
+    .form-hint {
+        font-size: 10px;
+
+        text-align: center;
+    }
+
+    /* FOOTER */
+
+    .footer {
+        padding: 55px 0 25px;
+    }
+
+    .footer-top {
+        grid-template-columns: 1fr;
+
+        gap: 35px;
+    }
+
+    .footer-description {
+        max-width: 100%;
+
+        font-size: 12px;
+    }
+
+    .footer-links {
+        gap: 10px;
+    }
+
+    .footer-links a {
+        font-size: 12px;
+    }
+
+    .footer-bottom {
+        margin-top: 40px;
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 8px;
+
+        font-size: 10px;
+    }
+
+    /* WHATSAPP */
+
+    .whatsapp-float {
+        right: 14px;
+        bottom: 14px;
+
+        width: 53px;
+        height: 53px;
+
+        box-shadow:
+            0 8px 30px rgba(37,211,102,.28);
+    }
+
+    .whatsapp-float svg {
+        width: 25px;
+        height: 25px;
+    }
+
+    /* MODAL */
+
+    .modal {
+        padding: 12px;
+
+        align-items: flex-end;
+    }
+
+    .modal-box {
+        width: 100%;
+
+        max-height: 92vh;
+
+        padding: 24px 18px;
+
+        border-radius: 24px 24px 18px 18px;
+    }
+
+    .modal-box h3 {
+        font-size: 24px;
+
+        padding-right: 35px;
+    }
+
+    .modal-box > p {
+        font-size: 12px;
+    }
+
+    .modal-close {
+        right: 14px;
+        top: 14px;
+    }
+
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 390px) {
+
+    .container {
+        width: calc(100% - 24px);
+    }
+
+    .logo {
+        font-size: 17px;
+    }
+
+    .logo-mark {
+        width: 34px;
+        height: 34px;
+    }
+
+    .hero {
+        padding-top: 100px;
+    }
+
+    .hero h1 {
+        font-size: 41px;
+
+        letter-spacing: -2.5px;
+    }
+
+    .hero-description {
+        font-size: 14px;
+    }
+
+    .hero-visual {
+        min-height: 330px;
+    }
+
+    .orbit {
+        width: 265px;
+        height: 265px;
+    }
+
+    .hero-logo-big {
+        width: 160px;
+        height: 160px;
+    }
+
+    .big-eagle {
+        width: 68px;
+        height: 68px;
+    }
+
+    .hero-logo-big strong {
+        font-size: 17px;
+    }
+
+    .floating-card strong {
+        font-size: 9px;
+    }
+
+    .card-one {
+        left: -4px;
+    }
+
+    .card-two {
+        right: -4px;
+    }
+
+    .section-title {
+        font-size: 33px;
+    }
+
+    .featured h3 {
+        font-size: 31px;
+    }
+
+    .cta h2 {
+        font-size: 35px;
+    }
+
+    .form-info h2 {
+        font-size: 34px;
+    }
+
+    .project-preview {
+        height: 205px;
+    }
+
+}
+
+/* =========================================================
+   EXTRA SMALL
+   ========================================================= */
+
+@media (max-width: 350px) {
+
+    .container {
+        width: calc(100% - 20px);
+    }
+
+    .hero h1 {
+        font-size: 38px;
+    }
+
+    .hero-visual {
+        transform: scale(.94);
+    }
+
+    .section-title {
+        font-size: 31px;
+    }
+
+    .logo-text {
+        font-size: 16px;
+    }
+
+}
+
+/* =========================================================
+   TOUCH DEVICES
+   ========================================================= */
+
+@media (hover: none) {
+
+    .btn:hover,
+    .service-card:hover,
+    .project-card:hover,
+    .whatsapp-float:hover {
+        transform: none;
+    }
+
+    .service-card:active,
+    .project-card:active {
+        transform: scale(.99);
+    }
+
+}
+
+/* =========================================================
+   REDUCE MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+
+}
+
+/* =========================================================
+   SAFE AREA FOR MODERN PHONES
+   ========================================================= */
+
+@supports (padding: max(0px)) {
+
+    .whatsapp-float {
+        right: max(14px, env(safe-area-inset-right));
+        bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+}
+
+/* =========================================================
+   MOBILE MENU EXTRA STYLE
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+    .nav-links {
+        position: fixed;
+
+        top: 76px;
+
+        left: 14px;
+        right: 14px;
+
+        display: none;
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 0;
+
+        padding: 10px;
+
+        background: rgba(8,12,18,.97);
+
+        border: 1px solid rgba(255,255,255,.09);
+
+        border-radius: 20px;
+
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+
+        box-shadow:
+            0 25px 70px rgba(0,0,0,.45);
+    }
+
+    .nav-links a {
+        width: 100%;
+
+        padding: 14px 15px;
+
+        border-radius: 12px;
+
+        font-size: 14px;
+    }
+
+    .nav-links a:active {
+        background: rgba(255,255,255,.06);
+    }
+
+}
+
 </style>
-{% endblock %}
+</head>
+
+<body>
+
+<!-- =======================================================
+     HEADER
+======================================================= -->
+
+<header class="header" id="header">
+
+    <div class="container">
+
+        <nav class="nav">
+
+            <a href="#top" class="logo">
+
+                <div class="logo-mark">
+
+                    <svg viewBox="0 0 100 100" fill="none">
+
+                        <path
+                            d="M18 61
+                               C8 48 12 28 31 17
+                               C27 30 32 38 42 43
+                               C36 29 43 17 57 10
+                               C54 25 59 35 70 40
+                               C75 33 82 30 89 31
+                               C83 36 82 43 87 49
+                               C80 45 73 46 68 51
+                               C60 59 55 67 45 72
+                               C36 77 25 74 18 61Z"
+                            fill="#0c6fae"
+                        />
+
+                        <path
+                            d="M20 61
+                               C34 66 46 59 54 48
+                               C61 38 68 37 78 40
+                               C68 45 66 53 60 60
+                               C52 70 39 82 26 78"
+                            stroke="#55D8FF"
+                            stroke-width="4"
+                            stroke-linecap="round"
+                        />
+
+                        <circle
+                            cx="74"
+                            cy="42"
+                            r="4"
+                            fill="#75E7FF"
+                        />
+
+                        <path
+                            d="M48 50 L57 54 L49 59"
+                            stroke="#6FE5FF"
+                            stroke-width="2"
+                        />
+
+                    </svg>
+
+                </div>
+
+                <div class="logo-text">
+                    Shumkar<span>.ai</span>
+                </div>
+
+            </a>
+
+            <div class="nav-links">
+
+                <a href="#services">Услуги</a>
+
+                <a href="#portfolio">Портфолио</a>
+
+                <a href="#process">Процесс</a>
+
+                <a href="#prices">Цены</a>
+
+                <a href="#faq">FAQ</a>
+
+            </div>
+
+            <div class="nav-actions">
+
+                <button
+                    class="btn btn-outline"
+                    onclick="openBrief()"
+                >
+                    Обсудить проект
+                </button>
+
+                <button
+                    class="menu-btn"
+                    onclick="toggleMenu()"
+                    aria-label="Меню"
+                    aria-expanded="false"
+                >
+                    ☰
+                </button>
+
+            </div>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+<!-- =======================================================
+     HERO
+======================================================= -->
+
+<main id="top">
+
+<section class="hero">
+
+    <div class="container">
+
+        <div class="hero-grid">
+
+            <div class="hero-content reveal">
+
+                <div class="eyebrow">
+
+                    <span class="eyebrow-dot"></span>
+
+                    Shumkar.ai · Digital studio
+
+                </div>
+
+                <h1>
+                    Создаём сайты,
+                    <span>которыми хочется делиться.</span>
+                </h1>
+
+                <p class="hero-description">
+
+                    Современные сайты и цифровые решения для бизнеса.
+                    Дизайн, разработка, запуск и дальнейшая поддержка —
+                    всё в одном месте.
+
+                </p>
+
+                <div class="hero-buttons">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="openBrief()"
+                    >
+                        Получить предложение →
+                    </button>
+
+                    <a
+                        href="#portfolio"
+                        class="btn btn-outline"
+                    >
+                        Смотреть работы
+                    </a>
+
+                </div>
+
+                <div class="hero-note">
+
+                    <div class="hero-note-icon">
+                        ✓
+                    </div>
+
+                    Бесплатно обсудим задачу и предложим решение
+
+                </div>
+
+            </div>
+
+
+            <div class="hero-visual reveal">
+
+                <div class="orbit">
+
+                    <div class="hero-logo-big">
+
+                        <svg
+                            class="big-eagle"
+                            viewBox="0 0 100 100"
+                            fill="none"
+                        >
+
+                            <path
+                                d="M18 61
+                                   C8 48 12 28 31 17
+                                   C27 30 32 38 42 43
+                                   C36 29 43 17 57 10
+                                   C54 25 59 35 70 40
+                                   C75 33 82 30 89 31
+                                   C83 36 82 43 87 49
+                                   C80 45 73 46 68 51
+                                   C60 59 55 67 45 72
+                                   C36 77 25 74 18 61Z"
+                                fill="#0C6FAE"
+                            />
+
+                            <path
+                                d="M20 61
+                                   C34 66 46 59 54 48
+                                   C61 38 68 37 78 40
+                                   C68 45 66 53 60 60
+                                   C52 70 39 82 26 78"
+                                stroke="#63DDFF"
+                                stroke-width="4"
+                                stroke-linecap="round"
+                            />
+
+                            <circle
+                                cx="74"
+                                cy="42"
+                                r="4"
+                                fill="#8CEBFF"
+                            />
+
+                        </svg>
+
+                        <strong>
+                            Shumkar<span>.ai</span>
+                        </strong>
+
+                    </div>
+
+                    <div class="floating-card card-one">
+
+                        <small>DESIGN</small>
+
+                        <strong>Premium UI/UX</strong>
+
+                    </div>
+
+                    <div class="floating-card card-two">
+
+                        <small>DEVELOPMENT</small>
+
+                        <strong>Fast & Responsive</strong>
+
+                    </div>
+
+                    <div class="floating-card card-three">
+
+                        <small>BUSINESS</small>
+
+                        <strong>Сайт, который продаёт</strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     MARQUEE
+======================================================= -->
+
+<div class="marquee">
+
+    <div class="marquee-track">
+
+        <div class="marquee-item">Сайты под ключ</div>
+        <div class="marquee-item">Landing Pages</div>
+        <div class="marquee-item">Интернет-магазины</div>
+        <div class="marquee-item">Web Design</div>
+        <div class="marquee-item">Разработка</div>
+        <div class="marquee-item">AI решения</div>
+        <div class="marquee-item">Telegram Bots</div>
+        <div class="marquee-item">Digital Business</div>
+
+        <div class="marquee-item">Сайты под ключ</div>
+        <div class="marquee-item">Landing Pages</div>
+        <div class="marquee-item">Интернет-магазины</div>
+        <div class="marquee-item">Web Design</div>
+        <div class="marquee-item">Разработка</div>
+        <div class="marquee-item">AI решения</div>
+        <div class="marquee-item">Telegram Bots</div>
+        <div class="marquee-item">Digital Business</div>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     SERVICES
+======================================================= -->
+
+<section class="section" id="services">
+
+    <div class="container">
+
+        <div class="section-top reveal">
+
+            <div>
+
+                <div class="section-label">
+                    Услуги
+                </div>
+
+                <h2 class="section-title">
+                    Всё необходимое,
+                    чтобы бизнес выглядел
+                    <span style="color:#47cfff;">
+                        дорого.
+                    </span>
+                </h2>
+
+            </div>
+
+            <p class="section-description">
+
+                Не просто делаем красивый сайт.
+                Создаём цифровой инструмент,
+                который помогает бизнесу получать клиентов.
+
+            </p>
+
+        </div>
+
+
+        <div class="services-grid">
+
+            <div class="service-card reveal">
+
+                <div>
+
+                    <div class="service-icon">
+                        ◈
+                    </div>
+
+                    <h3>
+                        Сайты и лендинги
+                    </h3>
+
+                    <p>
+                        Современные сайты для компаний,
+                        экспертов, услуг и локального бизнеса.
+                        Адаптивный дизайн и высокая скорость.
+                    </p>
+
+                </div>
+
+                <div class="service-bottom">
+                    Подробнее →
+                </div>
+
+            </div>
+
+
+            <div class="service-card reveal">
+
+                <div>
+
+                    <div class="service-icon">
+                        ◫
+                    </div>
+
+                    <h3>
+                        Интернет-магазины
+                    </h3>
+
+                    <p>
+                        Каталог товаров, корзина, заявки,
+                        категории, админ-панель и удобная
+                        мобильная версия.
+                    </p>
+
+                </div>
+
+                <div class="service-bottom">
+                    Подробнее →
+                </div>
+
+            </div>
+
+
+            <div class="service-card reveal">
+
+                <div>
+
+                    <div class="service-icon">
+                        ◎
+                    </div>
+
+                    <h3>
+                        AI и автоматизация
+                    </h3>
+
+                    <p>
+                        AI-консультанты, Telegram-боты,
+                        автоматизация заявок и цифровые
+                        инструменты для бизнеса.
+                    </p>
+
+                </div>
+
+                <div class="service-bottom">
+                    Подробнее →
+                </div>
+
+            </div>
+
+
+            <div class="service-card reveal">
+
+                <div>
+
+                    <div class="service-icon">
+                        ◇
+                    </div>
+
+                    <h3>
+                        UI/UX дизайн
+                    </h3>
+
+                    <p>
+                        Продуманный интерфейс, визуальная
+                        система бренда и структура сайта,
+                        которая помогает пользователю принять решение.
+                    </p>
+
+                </div>
+
+                <div class="service-bottom">
+                    Подробнее →
+                </div>
+
+            </div>
+
+
+            <div class="service-card reveal">
+
+                <div>
+
+                    <div class="service-icon">
+                        ↗
+                    </div>
+
+                    <h3>
+                        Запуск проекта
+                    </h3>
+
+                    <p>
+                        Подключаем домен, размещаем сайт,
+                        настраиваем необходимые сервисы
+                        и передаём готовый проект.
+                    </p>
+
+                </div>
+
+                <div class="service-bottom">
+                    Подробнее →
+                </div>
+
+            </div>
+
+
+            <div class="service-card reveal">
+
+                <div>
+
+                    <div class="service-icon">
+                        ∞
+                    </div>
+
+                    <h3>
+                        Поддержка
+                    </h3>
+
+                    <p>
+                        Помогаем развивать сайт после запуска:
+                        изменения, новые блоки, функционал
+                        и дальнейшее масштабирование.
+                    </p>
+
+                </div>
+
+                <div class="service-bottom">
+                    Подробнее →
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     STATS
+======================================================= -->
+
+<section class="section-sm">
+
+    <div class="container">
+
+        <div class="stats reveal">
+
+            <div class="stat">
+
+                <strong>3+</strong>
+
+                <span>
+                    готовых проекта
+                </span>
+
+            </div>
+
+            <div class="stat">
+
+                <strong>100%</strong>
+
+                <span>
+                    адаптация под телефон
+                </span>
+
+            </div>
+
+            <div class="stat">
+
+                <strong>24/7</strong>
+
+                <span>
+                    цифровой формат
+                </span>
+
+            </div>
+
+            <div class="stat">
+
+                <strong>1</strong>
+
+                <span>
+                    команда для всего проекта
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     WHY US
+======================================================= -->
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="why-grid">
+
+            <div class="reveal">
+
+                <div class="section-label">
+                    Почему Shumkar.ai
+                </div>
+
+                <h2 class="section-title">
+                    Не шаблон.
+                    <br>
+                    <span style="color:#50d3ff;">
+                        Под ваш бизнес.
+                    </span>
+                </h2>
+
+                <p
+                    class="section-description"
+                    style="margin-top:25px;"
+                >
+                    Каждый проект собирается с учётом
+                    задач бизнеса, аудитории и того,
+                    какое действие должен совершить клиент.
+                </p>
+
+            </div>
+
+
+            <div class="why-list">
+
+                <div class="why-card reveal">
+
+                    <div class="why-number">
+                        01
+                    </div>
+
+                    <h3>
+                        Современный дизайн
+                    </h3>
+
+                    <p>
+                        Сайт выглядит актуально,
+                        аккуратно и профессионально
+                        на любом экране.
+                    </p>
+
+                </div>
+
+
+                <div class="why-card reveal">
+
+                    <div class="why-number">
+                        02
+                    </div>
+
+                    <h3>
+                        Mobile first
+                    </h3>
+
+                    <p>
+                        Большинство клиентов приходит
+                        со смартфона, поэтому мобильная
+                        версия — не дополнение.
+                    </p>
+
+                </div>
+
+
+                <div class="why-card reveal">
+
+                    <div class="why-number">
+                        03
+                    </div>
+
+                    <h3>
+                        Понятный процесс
+                    </h3>
+
+                    <p>
+                        Обсуждаем задачу, предлагаем
+                        решение, показываем результат
+                        и запускаем.
+                    </p>
+
+                </div>
+
+
+                <div class="why-card reveal">
+
+                    <div class="why-number">
+                        04
+                    </div>
+
+                    <h3>
+                        Фокус на результате
+                    </h3>
+
+                    <p>
+                        Сайт должен не просто существовать,
+                        а помогать бизнесу получать обращения.
+                    </p>
+
+                </div>
+
+
+                <div class="why-card reveal">
+
+                    <div class="why-number">
+                        05
+                    </div>
+
+                    <h3>
+                        Быстрая связь
+                    </h3>
+
+                    <p>
+                        Клиент может сразу отправить заявку
+                        через WhatsApp без сложных форм.
+                    </p>
+
+                </div>
+
+
+                <div class="why-card reveal">
+
+                    <div class="why-number">
+                        06
+                    </div>
+
+                    <h3>
+                        Развитие проекта
+                    </h3>
+
+                    <p>
+                        После запуска можно добавлять
+                        новые функции и интеграции.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     PORTFOLIO
+======================================================= -->
+
+<section class="section" id="portfolio">
+
+    <div class="container">
+
+        <div class="section-top reveal">
+
+            <div>
+
+                <div class="section-label">
+                    Портфолио
+                </div>
+
+                <h2 class="section-title">
+                    Проекты,
+                    которые уже
+                    <span style="color:#51d4ff;">
+                        работают.
+                    </span>
+                </h2>
+
+            </div>
+
+            <p class="section-description">
+
+                Ниже — реальные демо-проекты
+                Shumkar.ai. Нажмите на проект,
+                чтобы открыть сайт.
+
+            </p>
+
+        </div>
+
+
+        <div class="portfolio-grid">
+
+            <a
+                href="https://eleganzomir-three.vercel.app"
+                target="_blank"
+                rel="noopener"
+                class="project-card reveal"
+            >
+
+                <div class="project-preview shop">
+
+                    <div class="preview-window">
+
+                        <div class="preview-top">
+
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+
+                        </div>
+
+                        <div class="preview-lines">
+
+                            <div class="preview-line big"></div>
+
+                            <div class="preview-line medium"></div>
+
+                            <div class="preview-line small"></div>
+
+                            <br>
+
+                            <div class="case-grid">
+
+                                <div class="case-box"></div>
+
+                                <div class="case-box"></div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="project-content">
+
+                    <div class="project-meta">
+
+                        <span>
+                            E-commerce
+                        </span>
+
+                        <span>
+                            01
+                        </span>
+
+                    </div>
+
+                    <h3>
+                        Eleganzo Mir
+                    </h3>
+
+                    <p>
+                        Современный интернет-магазин
+                        с каталогом товаров и
+                        мобильной адаптацией.
+                    </p>
+
+                    <span class="project-link">
+                        Открыть проект ↗
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <a
+                href="https://logoped-two.vercel.app"
+                target="_blank"
+                rel="noopener"
+                class="project-card reveal"
+            >
+
+                <div class="project-preview logoped">
+
+                    <div class="preview-window">
+
+                        <div class="preview-top">
+
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+
+                        </div>
+
+                        <div class="preview-lines">
+
+                            <div class="preview-line big"></div>
+
+                            <div class="preview-line medium"></div>
+
+                            <br>
+
+                            <div class="preview-line"></div>
+
+                            <div class="preview-line small"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="project-content">
+
+                    <div class="project-meta">
+
+                        <span>
+                            Education
+                        </span>
+
+                        <span>
+                            02
+                        </span>
+
+                    </div>
+
+                    <h3>
+                        Речевой центр
+                    </h3>
+
+                    <p>
+                        Премиальный сайт речевого
+                        центра для родителей и
+                        обучения логопедов.
+                    </p>
+
+                    <span class="project-link">
+                        Открыть проект ↗
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <a
+                href="https://barber-two-navy.vercel.app"
+                target="_blank"
+                rel="noopener"
+                class="project-card reveal"
+            >
+
+                <div class="project-preview barber">
+
+                    <div class="preview-window">
+
+                        <div class="preview-top">
+
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+                            <span class="preview-dot"></span>
+
+                        </div>
+
+                        <div class="preview-lines">
+
+                            <div class="preview-line big"></div>
+
+                            <div class="preview-line medium"></div>
+
+                            <div class="preview-line small"></div>
+
+                            <br>
+
+                            <div class="preview-line"></div>
+
+                            <div class="preview-line medium"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="project-content">
+
+                    <div class="project-meta">
+
+                        <span>
+                            Business
+                        </span>
+
+                        <span>
+                            03
+                        </span>
+
+                    </div>
+
+                    <h3>
+                        Barber Shop
+                    </h3>
+
+                    <p>
+                        Сайт для барбершопа с
+                        презентацией услуг и
+                        быстрым обращением клиента.
+                    </p>
+
+                    <span class="project-link">
+                        Открыть проект ↗
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <div
+                class="project-card reveal"
+                onclick="openBrief()"
+                style="cursor:pointer;"
+            >
+
+                <div
+                    class="project-preview"
+                    style="
+                    background:
+                    radial-gradient(circle at 50% 35%,rgba(67,206,255,.25),transparent 35%),
+                    linear-gradient(145deg,#0d1b26,#070a0e);
+                    "
+                >
+
+                    <div
+                        style="
+                        text-align:center;
+                        color:#55d8ff;
+                        "
+                    >
+
+                        <div
+                            style="
+                            font-size:70px;
+                            font-weight:300;
+                            "
+                        >
+                            +
+                        </div>
+
+                        <div
+                            style="
+                            font-size:13px;
+                            color:#7c8999;
+                            "
+                        >
+                            Ваш проект здесь
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="project-content">
+
+                    <div class="project-meta">
+
+                        <span>
+                            YOUR BUSINESS
+                        </span>
+
+                        <span>
+                            04
+                        </span>
+
+                    </div>
+
+                    <h3>
+                        Следующий проект
+                    </h3>
+
+                    <p>
+                        Возможно, именно ваш бизнес
+                        станет следующим кейсом
+                        Shumkar.ai.
+                    </p>
+
+                    <span class="project-link">
+                        Обсудить проект →
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     FEATURED
+======================================================= -->
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="featured reveal">
+
+            <div class="featured-grid">
+
+                <div>
+
+                    <div class="section-label">
+                        Наш подход
+                    </div>
+
+                    <h3>
+                        Ваш сайт должен
+                        работать на бизнес.
+                    </h3>
+
+                    <p>
+                        Поэтому мы продумываем не только
+                        внешний вид. Структура, оффер,
+                        кнопки, форма заявки, WhatsApp,
+                        мобильная версия — всё работает
+                        как единая система.
+                    </p>
+
+                    <div class="featured-tags">
+
+                        <span class="tag">
+                            UX/UI
+                        </span>
+
+                        <span class="tag">
+                            Responsive
+                        </span>
+
+                        <span class="tag">
+                            WhatsApp
+                        </span>
+
+                        <span class="tag">
+                            SEO
+                        </span>
+
+                        <span class="tag">
+                            Vercel
+                        </span>
+
+                    </div>
+
+                    <button
+                        class="btn btn-primary"
+                        style="margin-top:28px;"
+                        onclick="openBrief()"
+                    >
+                        Обсудить мой проект →
+                    </button>
+
+                </div>
+
+
+                <div class="case-screen">
+
+                    <div class="case-ui">
+
+                        <div class="case-header">
+
+                            <div class="case-pill"></div>
+
+                            <div
+                                class="case-pill"
+                                style="width:35px;"
+                            ></div>
+
+                        </div>
+
+                        <div
+                            style="
+                            margin-top:35px;
+                            width:65%;
+                            height:32px;
+                            border-radius:8px;
+                            background:rgba(85,216,255,.18);
+                            "
+                        ></div>
+
+                        <div
+                            style="
+                            margin-top:10px;
+                            width:45%;
+                            height:8px;
+                            border-radius:99px;
+                            background:rgba(255,255,255,.1);
+                            "
+                        ></div>
+
+                        <div class="case-grid">
+
+                            <div class="case-box"></div>
+
+                            <div class="case-box"></div>
+
+                            <div class="case-box"></div>
+
+                            <div class="case-box"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     PROCESS
+======================================================= -->
+
+<section
+    class="section process"
+    id="process"
+>
+
+    <div class="container">
+
+        <div class="section-top reveal">
+
+            <div>
+
+                <div class="section-label">
+                    Процесс
+                </div>
+
+                <h2 class="section-title">
+                    От идеи
+                    <span style="color:#53d5ff;">
+                        до запуска.
+                    </span>
+                </h2>
+
+            </div>
+
+            <p class="section-description">
+                Простой процесс без лишней бюрократии
+                и бесконечных согласований.
+            </p>
+
+        </div>
+
+
+        <div class="process-list">
+
+            <div class="process-item reveal">
+
+                <div class="process-number">
+                    01
+                </div>
+
+                <h3>
+                    Знакомство и задача
+                </h3>
+
+                <p>
+                    Вы рассказываете о бизнесе,
+                    цели сайта и том, что должен
+                    получить ваш клиент.
+                </p>
+
+            </div>
+
+
+            <div class="process-item reveal">
+
+                <div class="process-number">
+                    02
+                </div>
+
+                <h3>
+                    Структура и дизайн
+                </h3>
+
+                <p>
+                    Продумываем блоки, пользовательский
+                    путь, визуальный стиль и основные
+                    точки конверсии.
+                </p>
+
+            </div>
+
+
+            <div class="process-item reveal">
+
+                <div class="process-number">
+                    03
+                </div>
+
+                <h3>
+                    Разработка
+                </h3>
+
+                <p>
+                    Собираем сайт, адаптируем его
+                    под смартфоны, подключаем формы,
+                    кнопки и необходимые функции.
+                </p>
+
+            </div>
+
+
+            <div class="process-item reveal">
+
+                <div class="process-number">
+                    04
+                </div>
+
+                <h3>
+                    Запуск
+                </h3>
+
+                <p>
+                    Публикуем сайт, проверяем
+                    основные сценарии и передаём
+                    готовый результат.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     PRICES
+======================================================= -->
+
+<section
+    class="section"
+    id="prices"
+>
+
+    <div class="container">
+
+        <div class="section-top reveal">
+
+            <div>
+
+                <div class="section-label">
+                    Стоимость
+                </div>
+
+                <h2 class="section-title">
+                    Понятные
+                    <span style="color:#51d4ff;">
+                        пакеты.
+                    </span>
+                </h2>
+
+            </div>
+
+            <p class="section-description">
+                Финальная стоимость зависит от задачи.
+                После обсуждения даём точную оценку.
+            </p>
+
+        </div>
+
+
+        <div class="pricing-grid">
+
+            <div class="price-card reveal">
+
+                <h3>
+                    Landing
+                </h3>
+
+                <div class="price">
+                    от 10 000
+                    <span>сом</span>
+                </div>
+
+                <p>
+                    Для услуги, специалиста,
+                    небольшого бизнеса или рекламы.
+                </p>
+
+                <ul class="features">
+
+                    <li>
+                        Современный дизайн
+                    </li>
+
+                    <li>
+                        Адаптация под телефон
+                    </li>
+
+                    <li>
+                        WhatsApp-кнопки
+                    </li>
+
+                    <li>
+                        Форма заявки
+                    </li>
+
+                    <li>
+                        Размещение сайта
+                    </li>
+
+                </ul>
+
+                <button
+                    class="btn btn-outline"
+                    onclick="openBrief('Landing')"
+                >
+                    Обсудить
+                </button>
+
+            </div>
+
+
+            <div
+                class="price-card featured-price reveal"
+            >
+
+                <div class="price-badge">
+                    ПОПУЛЯРНЫЙ
+                </div>
+
+                <h3>
+                    Business
+                </h3>
+
+                <div class="price">
+                    от 20 000
+                    <span>сом</span>
+                </div>
+
+                <p>
+                    Полноценный сайт компании
+                    с несколькими разделами.
+                </p>
+
+                <ul class="features">
+
+                    <li>
+                        Премиальный UI
+                    </li>
+
+                    <li>
+                        Несколько страниц
+                    </li>
+
+                    <li>
+                        Анимации
+                    </li>
+
+                    <li>
+                        Формы заявок
+                    </li>
+
+                    <li>
+                        WhatsApp интеграция
+                    </li>
+
+                    <li>
+                        SEO-база
+                    </li>
+
+                </ul>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="openBrief('Business')"
+                >
+                    Получить предложение
+                </button>
+
+            </div>
+
+
+            <div class="price-card reveal">
+
+                <h3>
+                    E-commerce
+                </h3>
+
+                <div class="price">
+                    от 30 000
+                    <span>сом</span>
+                </div>
+
+                <p>
+                    Для магазина с каталогом,
+                    товарами и заявками.
+                </p>
+
+                <ul class="features">
+
+                    <li>
+                        Каталог товаров
+                    </li>
+
+                    <li>
+                        Категории
+                    </li>
+
+                    <li>
+                        Корзина
+                    </li>
+
+                    <li>
+                        Админ-панель
+                    </li>
+
+                    <li>
+                        Заявки
+                    </li>
+
+                    <li>
+                        Мобильная версия
+                    </li>
+
+                </ul>
+
+                <button
+                    class="btn btn-outline"
+                    onclick="openBrief('E-commerce')"
+                >
+                    Обсудить
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     TESTIMONIALS
+======================================================= -->
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="section-top reveal">
+
+            <div>
+
+                <div class="section-label">
+                    Отзывы
+                </div>
+
+                <h2 class="section-title">
+                    Нам важно,
+                    <span style="color:#51d4ff;">
+                        что вы скажете.
+                    </span>
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="testimonials">
+
+            <div class="testimonial reveal">
+
+                <div class="stars">
+                    ★★★★★
+                </div>
+
+                <p>
+                    «Нужен был современный сайт,
+                    который можно сразу показывать
+                    клиентам. Получилось именно то,
+                    что хотелось.»
+                </p>
+
+                <div class="author">
+
+                    <div class="author-avatar">
+                        Б
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Бизнес-клиент
+                        </strong>
+
+                        <span>
+                            Бишкек
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="testimonial reveal">
+
+                <div class="stars">
+                    ★★★★★
+                </div>
+
+                <p>
+                    «Особенно понравилось, что всё
+                    адаптировано под телефон и клиенту
+                    легко сразу написать в WhatsApp.»
+                </p>
+
+                <div class="author">
+
+                    <div class="author-avatar">
+                        С
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Владелец бизнеса
+                        </strong>
+
+                        <span>
+                            Кыргызстан
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="testimonial reveal">
+
+                <div class="stars">
+                    ★★★★★
+                </div>
+
+                <p>
+                    «Сайт выглядит намного дороже,
+                    чем мы ожидали. Теперь есть
+                    нормальная ссылка, которую
+                    можно отправлять клиентам.»
+                </p>
+
+                <div class="author">
+
+                    <div class="author-avatar">
+                        А
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Предприниматель
+                        </strong>
+
+                        <span>
+                            Бишкек
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     FAQ
+======================================================= -->
+
+<section
+    class="section"
+    id="faq"
+>
+
+    <div class="container">
+
+        <div class="section-top reveal">
+
+            <div>
+
+                <div class="section-label">
+                    FAQ
+                </div>
+
+                <h2 class="section-title">
+                    Частые
+                    <span style="color:#51d4ff;">
+                        вопросы.
+                    </span>
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq">
+
+            <div class="faq-item reveal">
+
+                <button class="faq-question">
+
+                    Сколько стоит сайт?
+
+                    <span class="faq-plus">
+                        +
+                    </span>
+
+                </button>
+
+                <div class="faq-answer">
+
+                    <div class="faq-answer-inner">
+
+                        Стоимость зависит от количества страниц,
+                        дизайна и функционала. Простые лендинги
+                        начинаются от 10 000 сом. После обсуждения
+                        задачи вы получите конкретную стоимость.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="faq-item reveal">
+
+                <button class="faq-question">
+
+                    Сколько времени занимает разработка?
+
+                    <span class="faq-plus">
+                        +
+                    </span>
+
+                </button>
+
+                <div class="faq-answer">
+
+                    <div class="faq-answer-inner">
+
+                        Небольшой лендинг можно сделать достаточно
+                        быстро. Более сложные сайты и магазины
+                        требуют больше времени. Срок определяем
+                        после оценки проекта.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="faq-item reveal">
+
+                <button class="faq-question">
+
+                    Сайт будет работать на телефоне?
+
+                    <span class="faq-plus">
+                        +
+                    </span>
+
+                </button>
+
+                <div class="faq-answer">
+
+                    <div class="faq-answer-inner">
+
+                        Да. Каждый сайт адаптируется под смартфоны,
+                        планшеты и компьютеры.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="faq-item reveal">
+
+                <button class="faq-question">
+
+                    Можно сделать кнопку WhatsApp?
+
+                    <span class="faq-plus">
+                        +
+                    </span>
+
+                </button>
+
+                <div class="faq-answer">
+
+                    <div class="faq-answer-inner">
+
+                        Да. Можно сделать обычную кнопку WhatsApp,
+                        плавающую кнопку, форму заявки или всё
+                        одновременно.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="faq-item reveal">
+
+                <button class="faq-question">
+
+                    Можно потом изменить сайт?
+
+                    <span class="faq-plus">
+                        +
+                    </span>
+
+                </button>
+
+                <div class="faq-answer">
+
+                    <div class="faq-answer-inner">
+
+                        Конечно. Сайт можно развивать, добавлять
+                        новые страницы, функции, каталог товаров,
+                        интеграции и другие возможности.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     CTA
+======================================================= -->
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="cta reveal">
+
+            <div class="section-label">
+                Shumkar.ai
+            </div>
+
+            <h2>
+                Есть идея?
+                <br>
+                Давайте запустим.
+            </h2>
+
+            <p>
+                Расскажите, что вам нужно.
+                Заполните короткий бриф — и
+                информация сразу откроется
+                в WhatsApp Shumkar.ai.
+            </p>
+
+            <div class="cta-buttons">
+
+                <button
+                    class="btn btn-primary"
+                    onclick="openBrief()"
+                >
+                    Заполнить бриф →
+                </button>
+
+                <a
+                    class="btn btn-outline"
+                    href="https://wa.me/996705501570?text=Здравствуйте!%20Хочу%20обсудить%20создание%20сайта."
+                    target="_blank"
+                    rel="noopener"
+                >
+                    Написать в WhatsApp
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     CONTACT FORM
+======================================================= -->
+
+<section
+    class="section form-section"
+    id="contact"
+>
+
+    <div class="container">
+
+        <div class="form-layout">
+
+            <div class="form-info reveal">
+
+                <div class="section-label">
+                    Быстрая заявка
+                </div>
+
+                <h2>
+                    Расскажите
+                    о своём проекте.
+                </h2>
+
+                <p>
+                    Не нужно писать длинное сообщение.
+                    Заполните несколько полей, и мы
+                    получим всю необходимую информацию
+                    в WhatsApp.
+                </p>
+
+                <div class="contact-points">
+
+                    <div class="contact-point">
+
+                        <div class="contact-icon">
+                            W
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                WhatsApp
+                            </strong>
+
+                            <span>
+                                Ответим на заявку
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="contact-point">
+
+                        <div class="contact-icon">
+                            ⚡
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Быстрый старт
+                            </strong>
+
+                            <span>
+                                Обсудим задачу и предложим решение
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="contact-point">
+
+                        <div class="contact-icon">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Без обязательств
+                            </strong>
+
+                            <span>
+                                Сначала обсуждаем задачу
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-card reveal">
+
+                <form id="mainForm">
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label>
+                                Ваше имя *
+                            </label>
+
+                            <input
+                                class="form-control"
+                                id="name"
+                                type="text"
+                                placeholder="Например, Нурбек"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>
+                                Телефон *
+                            </label>
+
+                            <input
+                                class="form-control"
+                                id="phone"
+                                type="tel"
+                                inputmode="tel"
+                                placeholder="0700 00 00 00"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Что вам нужно? *
+                        </label>
+
+                        <select
+                            class="form-control"
+                            id="service"
+                            required
+                        >
+
+                            <option value="">
+                                Выберите услугу
+                            </option>
+
+                            <option>
+                                Лендинг
+                            </option>
+
+                            <option>
+                                Сайт для бизнеса
+                            </option>
+
+                            <option>
+                                Интернет-магазин
+                            </option>
+
+                            <option>
+                                Сайт для барбершопа
+                            </option>
+
+                            <option>
+                                Сайт для ресторана
+                            </option>
+
+                            <option>
+                                Сайт для салона
+                            </option>
+
+                            <option>
+                                AI / Telegram-бот
+                            </option>
+
+                            <option>
+                                Другое
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Есть ли готовый бизнес?
+                        </label>
+
+                        <select
+                            class="form-control"
+                            id="business"
+                        >
+
+                            <option value="">
+                                Выберите вариант
+                            </option>
+
+                            <option>
+                                Уже работаю
+                            </option>
+
+                            <option>
+                                Только запускаю
+                            </option>
+
+                            <option>
+                                Пока только идея
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Примерный бюджет
+                        </label>
+
+                        <select
+                            class="form-control"
+                            id="budget"
+                        >
+
+                            <option value="">
+                                Выберите бюджет
+                            </option>
+
+                            <option>
+                                До 10 000 сом
+                            </option>
+
+                            <option>
+                                10 000 – 20 000 сом
+                            </option>
+
+                            <option>
+                                20 000 – 30 000 сом
+                            </option>
+
+                            <option>
+                                30 000 – 50 000 сом
+                            </option>
+
+                            <option>
+                                50 000+ сом
+                            </option>
+
+                            <option>
+                                Пока не знаю
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Ссылка на Instagram / сайт
+                        </label>
+
+                        <input
+                            class="form-control"
+                            id="social"
+                            type="text"
+                            placeholder="@username или ссылка"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Расскажите о задаче *
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="message"
+                            placeholder="Например: нужен сайт для барбершопа, 5 услуг, цены, адрес, Instagram и кнопка записи..."
+                            required
+                        ></textarea>
+
+                    </div>
+
+
+                    <button
+                        class="whatsapp-submit"
+                        type="submit"
+                    >
+
+                        <span style="font-size:18px;">
+                            ◉
+                        </span>
+
+                        Отправить заявку в WhatsApp
+
+                    </button>
+
+
+                    <div class="form-hint">
+
+                        После нажатия откроется WhatsApp
+                        с уже подготовленным сообщением.
+                        Вам останется нажать «Отправить».
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+</main>
+
+
+<!-- =======================================================
+     FOOTER
+======================================================= -->
+
+<footer class="footer">
+
+    <div class="container">
+
+        <div class="footer-top">
+
+            <div>
+
+                <a href="#top" class="logo">
+
+                    <div class="logo-mark">
+
+                        <svg viewBox="0 0 100 100" fill="none">
+
+                            <path
+                                d="M18 61
+                                   C8 48 12 28 31 17
+                                   C27 30 32 38 42 43
+                                   C36 29 43 17 57 10
+                                   C54 25 59 35 70 40
+                                   C75 33 82 30 89 31
+                                   C83 36 82 43 87 49
+                                   C80 45 73 46 68 51
+                                   C60 59 55 67 45 72
+                                   C36 77 25 74 18 61Z"
+                                fill="#0C6FAE"
+                            />
+
+                            <path
+                                d="M20 61
+                                   C34 66 46 59 54 48
+                                   C61 38 68 37 78 40
+                                   C68 45 66 53 60 60
+                                   C52 70 39 82 26 78"
+                                stroke="#55D8FF"
+                                stroke-width="4"
+                                stroke-linecap="round"
+                            />
+
+                        </svg>
+
+                    </div>
+
+                    <div class="logo-text">
+                        Shumkar<span>.ai</span>
+                    </div>
+
+                </a>
+
+
+                <p class="footer-description">
+
+                    Создаём современные сайты и
+                    цифровые решения, которые помогают
+                    бизнесу выглядеть профессионально
+                    и получать больше клиентов.
+
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <div class="footer-title">
+                    Навигация
+                </div>
+
+                <div class="footer-links">
+
+                    <a href="#services">
+                        Услуги
+                    </a>
+
+                    <a href="#portfolio">
+                        Портфолио
+                    </a>
+
+                    <a href="#process">
+                        Процесс
+                    </a>
+
+                    <a href="#prices">
+                        Цены
+                    </a>
+
+                    <a href="#faq">
+                        FAQ
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="footer-title">
+                    Связь
+                </div>
+
+                <div class="footer-links">
+
+                    <a
+                        href="https://wa.me/996705501570"
+                        target="_blank"
+                    >
+                        WhatsApp
+                    </a>
+
+                    <a
+                        href="https://instagram.com/shumkar.ai"
+                        target="_blank"
+                    >
+                        Instagram
+                    </a>
+
+                    <a href="#contact">
+                        Оставить заявку
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="footer-bottom">
+
+            <span>
+                © 2026 Shumkar.ai. Все права защищены.
+            </span>
+
+            <span>
+                Made with discipline.
+            </span>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+<!-- =======================================================
+     FLOATING WHATSAPP
+======================================================= -->
+
+<a
+    class="whatsapp-float"
+    href="https://wa.me/996705501570?text=Здравствуйте!%20Хочу%20обсудить%20создание%20сайта%20с%20Shumkar.ai."
+    target="_blank"
+    rel="noopener"
+    aria-label="WhatsApp"
+>
+
+    <svg
+        width="27"
+        height="27"
+        viewBox="0 0 24 24"
+        fill="none"
+    >
+
+        <path
+            d="M20 11.5a8.4 8.4 0 0 1-12.7 7.3L3 20l1.3-4.1A8.4 8.4 0 1 1 20 11.5Z"
+            stroke="white"
+            stroke-width="1.7"
+        />
+
+        <path
+            d="M8.5 8.5c.2-.4.5-.4.8-.4h.5c.2 0 .4.1.5.4l.7 1.7c.1.2.1.4-.1.6l-.6.7c.6 1.1 1.5 2 2.7 2.5l.7-.7c.2-.2.4-.2.7-.1l1.7.8c.3.1.4.3.4.6 0 .9-.4 1.4-1 1.6-1.1.4-2.7-.3-4.4-1.5-1.4-1-2.5-2.2-3.1-3.4-.7-1.3-.8-2.4-.3-2.8Z"
+            fill="white"
+        />
+
+    </svg>
+
+</a>
+
+
+<!-- =======================================================
+     BRIEF MODAL
+======================================================= -->
+
+<div
+    class="modal"
+    id="briefModal"
+    onclick="closeModalOutside(event)"
+>
+
+    <div class="modal-box">
+
+        <button
+            class="modal-close"
+            onclick="closeBrief()"
+        >
+            ×
+        </button>
+
+        <div class="section-label">
+            Shumkar.ai
+        </div>
+
+        <h3>
+            Обсудим ваш проект
+        </h3>
+
+        <p>
+            Заполните короткую форму.
+            После отправки WhatsApp откроется
+            с готовым сообщением.
+        </p>
+
+
+        <form
+            id="briefForm"
+            style="margin-top:25px;"
+        >
+
+            <div class="form-group">
+
+                <label>
+                    Имя *
+                </label>
+
+                <input
+                    class="form-control"
+                    id="briefName"
+                    required
+                    placeholder="Ваше имя"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    Телефон *
+                </label>
+
+                <input
+                    class="form-control"
+                    id="briefPhone"
+                    type="tel"
+                    inputmode="tel"
+                    required
+                    placeholder="0700 00 00 00"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    Какая услуга нужна? *
+                </label>
+
+                <select
+                    class="form-control"
+                    id="briefService"
+                    required
+                >
+
+                    <option value="">
+                        Выберите
+                    </option>
+
+                    <option>
+                        Лендинг
+                    </option>
+
+                    <option>
+                        Сайт для бизнеса
+                    </option>
+
+                    <option>
+                        Интернет-магазин
+                    </option>
+
+                    <option>
+                        Сайт для барбершопа
+                    </option>
+
+                    <option>
+                        Сайт для салона
+                    </option>
+
+                    <option>
+                        Сайт для ресторана
+                    </option>
+
+                    <option>
+                        AI / Telegram-бот
+                    </option>
+
+                    <option>
+                        Другое
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    Бюджет
+                </label>
+
+                <select
+                    class="form-control"
+                    id="briefBudget"
+                >
+
+                    <option>
+                        Пока не знаю
+                    </option>
+
+                    <option>
+                        До 10 000 сом
+                    </option>
+
+                    <option>
+                        10 000 – 20 000 сом
+                    </option>
+
+                    <option>
+                        20 000 – 30 000 сом
+                    </option>
+
+                    <option>
+                        30 000 – 50 000 сом
+                    </option>
+
+                    <option>
+                        50 000+ сом
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    Что нужно сделать? *
+                </label>
+
+                <textarea
+                    class="form-control"
+                    id="briefMessage"
+                    required
+                    placeholder="Опишите ваш бизнес и что хотите получить..."
+                ></textarea>
+
+            </div>
+
+
+            <button
+                class="whatsapp-submit"
+                type="submit"
+            >
+                Отправить в WhatsApp →
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================================
+     JAVASCRIPT
+======================================================= -->
+
+<script>
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
+const WHATSAPP_NUMBER = "996705501570";
+
+
+/* =========================================================
+   HEADER SCROLL
+========================================================= */
+
+const header = document.getElementById("header");
+
+window.addEventListener("scroll", () => {
+
+    if (window.scrollY > 40) {
+
+        header.classList.add("scrolled");
+
+    } else {
+
+        header.classList.remove("scrolled");
+
+    }
+
+}, { passive: true });
+
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+function toggleMenu() {
+
+    const nav = document.querySelector(".nav-links");
+
+    const menuButton =
+        document.querySelector(".menu-btn");
+
+    if (!nav) return;
+
+    const isOpen =
+        nav.classList.contains("mobile-open");
+
+    if (isOpen) {
+
+        nav.classList.remove("mobile-open");
+
+        nav.style.display = "";
+
+        if (menuButton) {
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+        }
+
+    } else {
+
+        nav.classList.add("mobile-open");
+
+        nav.style.display = "flex";
+
+        if (menuButton) {
+            menuButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   CLOSE MOBILE MENU
+========================================================= */
+
+function closeMobileMenu() {
+
+    const nav =
+        document.querySelector(".nav-links");
+
+    const menuButton =
+        document.querySelector(".menu-btn");
+
+    if (!nav) return;
+
+    nav.classList.remove("mobile-open");
+
+    nav.style.display = "";
+
+    if (menuButton) {
+
+        menuButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   FAQ
+========================================================= */
+
+document
+    .querySelectorAll(".faq-question")
+    .forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const item =
+                button.closest(".faq-item");
+
+            document
+                .querySelectorAll(".faq-item")
+                .forEach(other => {
+
+                    if (other !== item) {
+
+                        other.classList.remove("active");
+
+                    }
+
+                });
+
+            item.classList.toggle("active");
+
+        });
+
+    });
+
+
+/* =========================================================
+   REVEAL ANIMATION
+========================================================= */
+
+const observer =
+    new IntersectionObserver(
+
+        entries => {
+
+            entries.forEach(entry => {
+
+                if (entry.isIntersecting) {
+
+                    entry.target.classList.add("visible");
+
+                    observer.unobserve(entry.target);
+
+                }
+
+            });
+
+        },
+
+        {
+            threshold: 0.08
+        }
+
+    );
+
+
+document
+    .querySelectorAll(".reveal")
+    .forEach(element => {
+
+        observer.observe(element);
+
+    });
+
+
+/* =========================================================
+   BRIEF MODAL
+========================================================= */
+
+function openBrief(service = "") {
+
+    const modal =
+        document.getElementById("briefModal");
+
+    modal.classList.add("active");
+
+    document.body.style.overflow = "hidden";
+
+    if (service) {
+
+        document
+            .getElementById("briefService")
+            .value = service;
+
+    }
+
+}
+
+
+function closeBrief() {
+
+    document
+        .getElementById("briefModal")
+        .classList.remove("active");
+
+    document.body.style.overflow = "";
+
+}
+
+
+function closeModalOutside(event) {
+
+    if (
+        event.target ===
+        document.getElementById("briefModal")
+    ) {
+
+        closeBrief();
+
+    }
+
+}
+
+
+document.addEventListener("keydown", event => {
+
+    if (event.key === "Escape") {
+
+        closeBrief();
+
+    }
+
+});
+
+
+/* =========================================================
+   WHATSAPP
+========================================================= */
+
+function sendToWhatsApp(data) {
+
+    const text =
+
+`Здравствуйте! Хочу обсудить проект с Shumkar.ai.
+
+👤 Имя: ${data.name}
+
+📱 Телефон: ${data.phone}
+
+💻 Услуга: ${data.service}
+
+🏢 Бизнес: ${data.business || "Не указано"}
+
+💰 Бюджет: ${data.budget || "Не указан"}
+
+🔗 Instagram / сайт:
+${data.social || "Не указано"}
+
+📝 Задача:
+${data.message}
+
+Отправлено через сайт Shumkar.ai.`;
+
+    const url =
+        "https://wa.me/" +
+        WHATSAPP_NUMBER +
+        "?text=" +
+        encodeURIComponent(text);
+
+    window.open(url, "_blank");
+
+}
+
+
+/* =========================================================
+   MAIN FORM
+========================================================= */
+
+document
+    .getElementById("mainForm")
+    .addEventListener("submit", event => {
+
+        event.preventDefault();
+
+        const data = {
+
+            name:
+                document
+                .getElementById("name")
+                .value
+                .trim(),
+
+            phone:
+                document
+                .getElementById("phone")
+                .value
+                .trim(),
+
+            service:
+                document
+                .getElementById("service")
+                .value,
+
+            business:
+                document
+                .getElementById("business")
+                .value,
+
+            budget:
+                document
+                .getElementById("budget")
+                .value,
+
+            social:
+                document
+                .getElementById("social")
+                .value
+                .trim(),
+
+            message:
+                document
+                .getElementById("message")
+                .value
+                .trim()
+
+        };
+
+        sendToWhatsApp(data);
+
+    });
+
+
+/* =========================================================
+   MODAL FORM
+========================================================= */
+
+document
+    .getElementById("briefForm")
+    .addEventListener("submit", event => {
+
+        event.preventDefault();
+
+        const data = {
+
+            name:
+                document
+                .getElementById("briefName")
+                .value
+                .trim(),
+
+            phone:
+                document
+                .getElementById("briefPhone")
+                .value
+                .trim(),
+
+            service:
+                document
+                .getElementById("briefService")
+                .value,
+
+            business:
+                "Не указано",
+
+            budget:
+                document
+                .getElementById("briefBudget")
+                .value,
+
+            social:
+                "Не указано",
+
+            message:
+                document
+                .getElementById("briefMessage")
+                .value
+                .trim()
+
+        };
+
+        sendToWhatsApp(data);
+
+    });
+
+
+/* =========================================================
+   SMOOTH ANCHORS
+========================================================= */
+
+document
+    .querySelectorAll('a[href^="#"]')
+    .forEach(link => {
+
+        link.addEventListener("click", event => {
+
+            const target =
+                document.querySelector(
+                    link.getAttribute("href")
+                );
+
+            if (target) {
+
+                event.preventDefault();
+
+                closeMobileMenu();
+
+                target.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+
+            }
+
+        });
+
+    });
+
+
+/* =========================================================
+   CLOSE MOBILE MENU AFTER CLICK
+========================================================= */
+
+document
+    .querySelectorAll(".nav-links a")
+    .forEach(link => {
+
+        link.addEventListener("click", () => {
+
+            if (window.innerWidth <= 1000) {
+
+                closeMobileMenu();
+
+            }
+
+        });
+
+    });
+
+
+/* =========================================================
+   CLOSE MENU WHEN RESIZING
+========================================================= */
+
+window.addEventListener("resize", () => {
+
+    if (window.innerWidth > 1000) {
+
+        closeMobileMenu();
+
+    }
+
+});
+
+
+/* =========================================================
+   PHONE INPUT FORMAT
+========================================================= */
+
+document
+    .querySelectorAll('input[type="tel"]')
+    .forEach(input => {
+
+        input.addEventListener("input", () => {
+
+            input.value =
+                input.value.replace(
+                    /[^0-9+\s()-]/g,
+                    ""
+                );
+
+        });
+
+    });
+
+
+/* =========================================================
+   YEAR
+========================================================= */
+
+document
+    .querySelectorAll(
+        ".footer-bottom span:first-child"
+    )
+    .forEach(el => {
+
+        el.innerHTML =
+            "© " +
+            new Date().getFullYear() +
+            " Shumkar.ai. Все права защищены.";
+
+    });
+
+</script>
+
+</body>
+</html>
