@@ -1,4 +1,4 @@
-import json
+﻿import json
 import logging
 from pathlib import Path
 
@@ -13,6 +13,7 @@ from .models import (
     PortfolioProject,
     Review,
     Service,
+    SiteImage,
     SitePage,
     SiteSettings,
 )
@@ -26,8 +27,8 @@ def home(request):
     except Exception:
         logger.exception("SHUMKAR HOME PAGE ERROR")
         return HttpResponse(
-            "Ошибка загрузки главной страницы. "
-            "Подробности сохранены в логах сервера.",
+            "РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РіР»Р°РІРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹. "
+            "РџРѕРґСЂРѕР±РЅРѕСЃС‚Рё СЃРѕС…СЂР°РЅРµРЅС‹ РІ Р»РѕРіР°С… СЃРµСЂРІРµСЂР°.",
             status=500,
             content_type="text/plain; charset=utf-8",
         )
@@ -54,7 +55,7 @@ def _render_home(request):
 
         if template_path is None:
             raise FileNotFoundError(
-                "index.html не найден. Проверены пути: "
+                "index.html РЅРµ РЅР°Р№РґРµРЅ. РџСЂРѕРІРµСЂРµРЅС‹ РїСѓС‚Рё: "
                 + ", ".join(str(path) for path in candidates)
             )
 
@@ -67,7 +68,7 @@ def _render_home(request):
         if soup.title:
             soup.title.string = (
                 settings_obj.seo_title
-                or f"{settings_obj.site_name} — сайты для бизнеса"
+                or f"{settings_obj.site_name} вЂ” СЃР°Р№С‚С‹ РґР»СЏ Р±РёР·РЅРµСЃР°"
             )
 
         if settings_obj.seo_description:
@@ -150,7 +151,7 @@ def _render_home(request):
                 "div",
                 attrs={"class": "service-icon"},
             )
-            icon.string = item.icon or "◇"
+            icon.string = item.icon or "в—‡"
 
             title = soup.new_tag("h3")
             title.string = item.title
@@ -165,7 +166,7 @@ def _render_home(request):
                 attrs={"class": "service-bottom"},
             )
             bottom.string = (
-                (item.price + " · ") if item.price else ""
+                (item.price + " В· ") if item.price else ""
             ) + item.button_text
 
             card.extend([inner, bottom])
@@ -218,7 +219,7 @@ def _render_home(request):
                     "color:#58d9ff;"
                     "background:linear-gradient(145deg,#0d1b26,#070a0e)"
                 )
-                preview.string = item.category or "Проект"
+                preview.string = item.category or "РџСЂРѕРµРєС‚"
 
             content = soup.new_tag(
                 "div",
@@ -249,7 +250,7 @@ def _render_home(request):
                 attrs={"class": "project-link"},
             )
             project_link.string = (
-                "Открыть проект ↗" if item.url else "Проект"
+                "РћС‚РєСЂС‹С‚СЊ РїСЂРѕРµРєС‚ в†—" if item.url else "РџСЂРѕРµРєС‚"
             )
 
             content.extend(
@@ -281,10 +282,10 @@ def _render_home(request):
                     "div",
                     attrs={"class": "stars"},
                 )
-                stars.string = "★" * max(1, min(5, review.rating))
+                stars.string = "в…" * max(1, min(5, review.rating))
 
                 quote = soup.new_tag("p")
-                quote.string = f"«{review.text}»"
+                quote.string = f"В«{review.text}В»"
 
                 author = soup.new_tag(
                     "div",
@@ -295,7 +296,7 @@ def _render_home(request):
                     "div",
                     attrs={"class": "author-avatar"},
                 )
-                avatar.string = (review.name[:1] or "К").upper()
+                avatar.string = (review.name[:1] or "Рљ").upper()
 
                 author_details = soup.new_tag("div")
 
