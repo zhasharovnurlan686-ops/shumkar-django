@@ -42,7 +42,22 @@ def _render_home(request):
     if page:
         html = page.html_content
     else:
-        template_path = Path(settings.BASE_DIR) / "templates" / "index.html"
+        candidates = [
+            Path(settings.BASE_DIR) / "templates" / "index.html",
+            Path(settings.BASE_DIR) / "index.html",
+        ]
+
+        template_path = next(
+            (path for path in candidates if path.is_file()),
+            None,
+        )
+
+        if template_path is None:
+            raise FileNotFoundError(
+                "index.html не найден. Проверены пути: "
+                + ", ".join(str(path) for path in candidates)
+            )
+
         html = template_path.read_text(encoding="utf-8")
 
     settings_obj = SiteSettings.objects.first()
@@ -71,7 +86,9 @@ def _render_home(request):
                 )
                 soup.head.append(meta_description)
             elif meta_description is not None:
-                meta_description["content"] = settings_obj.seo_description
+                meta_description["content"] = (
+                    settings_obj.seo_description
+                )
 
         hero = soup.select_one(".hero h1, h1")
         if hero and settings_obj.hero_title:
