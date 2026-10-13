@@ -18,6 +18,9 @@ class SiteSettings(models.Model):
     instagram_url = models.URLField('Ссылка Instagram', default='https://instagram.com/shumkar.ai')
     contact_email = models.EmailField('Email для связи', blank=True)
     contact_text = models.CharField('Текст контакта', max_length=250, default='Напишите нам, чтобы обсудить ваш проект')
+    logo = models.ImageField('Логотип', upload_to='site-settings/%Y/%m/', blank=True, null=True)
+    seo_title = models.CharField('SEO: заголовок страницы', max_length=200, blank=True)
+    seo_description = models.CharField('SEO: описание страницы', max_length=320, blank=True)
     updated_at = models.DateTimeField('Обновлено', auto_now=True)
     class Meta:
         verbose_name = 'Настройки сайта'; verbose_name_plural = 'Настройки сайта'
@@ -48,6 +51,13 @@ class PortfolioProject(models.Model):
     def __str__(self): return self.title
 
 class Lead(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новая'),
+        ('in_progress', 'В работе'),
+        ('agreed', 'Договорились'),
+        ('completed', 'Завершена'),
+        ('rejected', 'Отказ'),
+    ]
     name = models.CharField('Имя', max_length=160)
     phone = models.CharField('Телефон', max_length=60)
     service = models.CharField('Услуга', max_length=160, blank=True)
@@ -57,6 +67,7 @@ class Lead(models.Model):
     message = models.TextField('Задача / сообщение', blank=True)
     created_at = models.DateTimeField('Получена', auto_now_add=True)
     is_processed = models.BooleanField('Обработана', default=False)
+    status = models.CharField('Статус заявки', max_length=20, choices=STATUS_CHOICES, default='new')
     class Meta:
         ordering = ['-created_at']; verbose_name = 'Заявка клиента'; verbose_name_plural = 'Заявки клиентов'
     def __str__(self): return f'{self.name} — {self.phone}'
@@ -69,3 +80,21 @@ class SiteImage(models.Model):
     class Meta:
         verbose_name = 'Изображение сайта'; verbose_name_plural = 'Изображения сайта'
     def __str__(self): return self.title
+
+
+class Review(models.Model):
+    name = models.CharField('Имя клиента', max_length=160)
+    role = models.CharField('Компания / роль', max_length=160, blank=True)
+    text = models.TextField('Отзыв')
+    rating = models.PositiveSmallIntegerField('Оценка', default=5)
+    is_active = models.BooleanField('Показывать на сайте', default=True)
+    sort_order = models.PositiveIntegerField('Порядок отображения', default=0)
+    created_at = models.DateTimeField('Добавлен', auto_now_add=True)
+
+    class Meta:
+        ordering = ['sort_order', '-created_at']
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    def __str__(self):
+        return f'{self.name} — {self.rating}/5'
